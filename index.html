@@ -72,7 +72,7 @@
             voice: {
                 url: 'https://runtime-api.voiceflow.com'
             },
-            autostart: false, // On démarre manuellement pour passer les variables
+            autostart: true,
             allowDangerousHTML: true,
             assistant: {
                 title: 'TAO Agent',
@@ -83,28 +83,6 @@
 
         // Token API pour les requêtes avancées
         const API_TOKEN = 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP';
-        
-        // Mapping des agents avec leurs informations
-        const AGENT_MAP = {
-            '1-3': {
-                title: 'Semaine 1 - Agent 3',
-                description: 'Violence - Sensibilisation',
-                agentID: '1-3',
-                topic: 'violence'
-            },
-            '1-4': {
-                title: 'Semaine 1 - Agent 4', 
-                description: 'Thématique agent 4',
-                agentID: '1-4',
-                topic: 'agent4'
-            },
-            '2-4': {
-                title: 'Semaine 2 - Agent 4',
-                description: 'Évolution semaine 2',
-                agentID: '2-4', 
-                topic: 'evolution'
-            }
-        };
         
         // Fonction pour extraire les paramètres de l'URL
         function getURLParameter(name) {
@@ -117,46 +95,66 @@
             return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
         
-        // Récupérer les paramètres de l'URL
-        const agentParam = getURLParameter('agent'); // Nouveau paramètre principal
-        const userID = getURLParameter('userID') || generateUserID();
-        const debug = getURLParameter('debug') === 'true';
-        
-        // Déterminer quel agent utiliser
-        let currentAgent = null;
-        let agentInfo = null;
-        
-        if (agentParam && AGENT_MAP[agentParam]) {
-            currentAgent = agentParam;
-            agentInfo = AGENT_MAP[agentParam];
-        } else {
-            // Valeur par défaut ou erreur
-            currentAgent = '1-3'; // Agent par défaut
-            agentInfo = AGENT_MAP['1-3'];
-            console.warn('Agent non spécifié ou invalide, utilisation de l\'agent par défaut:', currentAgent);
+        // Fonction pour formater le titre de l'agent
+        function formatAgentTitle(agentID) {
+            if (!agentID) return 'TAO Agent';
+            
+            // Si format semaine-agent (ex: 1-3, 2-5)
+            if (agentID.match(/^\d+-\d+$/)) {
+                const parts = agentID.split('-');
+                return `Semaine ${parts[0]} - Agent ${parts[1]}`;
+            }
+            
+            // Sinon, capitaliser le nom
+            return agentID.replace(/_/g, ' ')
+                          .split(' ')
+                          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                          .join(' ');
         }
         
+        // Récupérer les paramètres de l'URL
+        const agentParam = getURLParameter('agent'); // N'importe quel agent
+        const userID = getURLParameter('userID') || generateUserID();
+        const debug = getURLParameter('debug') === 'true';
+        const customTitle = getURLParameter('title');
+        
+        // Déterminer quel agent utiliser (générique)
+        let currentAgent = agentParam || 'default'; // Agent par défaut si non spécifié
+        
+        // Générer le titre automatiquement
+        let agentTitle = customTitle ? decodeURIComponent(customTitle) : formatAgentTitle(currentAgent);
+        
         // Afficher les informations de l'agent en cours de chargement
-        document.getElementById('agent-info').textContent = 
-            `${agentInfo.title} - ${agentInfo.description}`;
+        document.getElementById('agent-info').textContent = `Agent: ${currentAgent}`;
         
-        // Configuration finale avec les variables d'agent
+        // Configuration finale avec les variables d'agent (générique)
         let voiceflowConfig = { ...BASE_CONFIG };
-        voiceflowConfig.assistant.title = agentInfo.title;
-        voiceflowConfig.assistant.description = agentInfo.description;
+        voiceflowConfig.assistant.title = agentTitle;
         
-        // Configuration de session avec variables spécifiques à l'agent
+        // Configuration de session avec variables universelles
         voiceflowConfig.session = {
             userID: userID,
             variables: {
-                agentID: agentInfo.agentID, // Utilise le vrai nom du flow
-                urlAgent: currentAgent, // Garde la référence de l'URL (1-3)
-                semaine: currentAgent.split('-')[0],
-                numeroAgent: currentAgent.split('-')[1],
-                topic: agentInfo.topic,
-                agentTitle: agentInfo.title
+                agentID: currentAgent, // Envoie directement la valeur de l'URL
+                userID: userID,
+                timestamp: Date.now()
             }
         };
+        
+        // Ajouter des variables supplémentaires si format semaine-agent
+        if (currentAgent.match(/^\d+-\d+$/)) {
+            const parts = currentAgent.split('-');
+            voiceflowConfig.session.variables.semaine = parts[0];
+            voiceflowConfig.session.variables.numeroAgent = parts[1];
+        }
+        
+        // Ajouter toutes les autres variables de l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        for (const [key, value] of urlParams) {
+            if (key !== 'agent' && key !== 'debug' && key !== 'title') {
+                voiceflowConfig.session.variables[key] = value;
+            }
+        }
         
         // Détecter si on est dans un iframe (Adalo)
         const isInIframe = window.self !== window.top;
@@ -172,19 +170,17 @@
                 
                 window.voiceflow.chat.load(voiceflowConfig).then(() => {
                     console.log('Widget Voiceflow chargé avec succès');
+                    console.log('Variables envoyées:', voiceflowConfig.session.variables);
                     document.getElementById('loading-message').classList.add('hidden');
                     
-                    // Démarrer la conversation avec les variables d'agent
+                    // S'assurer que les variables sont bien transmises
                     setTimeout(() => {
                         window.voiceflow.chat.interact({
                             type: 'launch',
                             payload: voiceflowConfig.session.variables
                         });
-                        
-                        if (debug) {
-                            console.log('Variables envoyées à Voiceflow:', voiceflowConfig.session.variables);
-                        }
-                    }, 500);
+                        console.log('Variables transmises au lancement:', voiceflowConfig.session.variables);
+                    }, 1000);
                     
                 }).catch((error) => {
                     console.error('Erreur lors du chargement du widget:', error);
@@ -221,15 +217,13 @@
         // Gestion des messages pour Adalo
         if (isInIframe) {
             window.addEventListener('message', function(event) {
-                if (debug) {
-                    console.log('Message reçu d\'Adalo:', event.data);
-                }
+                console.log('Message reçu d\'Adalo:', event.data);
                 
                 // Traiter les commandes d'Adalo
                 if (event.data && event.data.action) {
                     switch(event.data.action) {
                         case 'changeAgent':
-                            if (event.data.agentID && AGENT_MAP[event.data.agentID]) {
+                            if (event.data.agentID) {
                                 // Recharger avec le nouvel agent
                                 window.location.search = `?agent=${event.data.agentID}`;
                             }
@@ -251,17 +245,17 @@
             }, '*');
         }
         
-        // Log des paramètres pour débogage
-        if (debug) {
-            console.log('Configuration simplifiée:', {
-                agentParam: agentParam,
-                currentAgent: currentAgent, // "1-3"
-                agentInfo: agentInfo,
-                userID: userID,
-                isInIframe: isInIframe,
-                sessionVariables: voiceflowConfig.session.variables
-            });
-        }
+        // Log des paramètres pour débogage (toujours actif pour les tests)
+        console.log('🔍 Configuration Générique:', {
+            urlComplete: window.location.href,
+            agentParam: agentParam,
+            currentAgent: currentAgent,
+            agentTitle: agentTitle,
+            userID: userID,
+            isInIframe: isInIframe,
+            sessionVariables: voiceflowConfig.session.variables,
+            toutesLesVariablesURL: Object.fromEntries(urlParams)
+        });
     </script>
 </body>
 </html>
