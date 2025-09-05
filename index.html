@@ -169,18 +169,33 @@
                 console.log('Initialisation du widget Voiceflow...', voiceflowConfig);
                 
                 window.voiceflow.chat.load(voiceflowConfig).then(() => {
-                    console.log('Widget Voiceflow chargé avec succès');
-                    console.log('Variables envoyées:', voiceflowConfig.session.variables);
+                    console.log('✅ Widget Voiceflow chargé avec succès');
+                    console.log('📤 Variables envoyées:', voiceflowConfig.session.variables);
                     document.getElementById('loading-message').classList.add('hidden');
                     
-                    // S'assurer que les variables sont bien transmises
-                    setTimeout(() => {
-                        window.voiceflow.chat.interact({
-                            type: 'launch',
-                            payload: voiceflowConfig.session.variables
-                        });
-                        console.log('Variables transmises au lancement:', voiceflowConfig.session.variables);
-                    }, 1000);
+                    // Forcer le démarrage de la conversation
+                    console.log('🚀 Tentative de démarrage de la conversation...');
+                    
+                    // Première tentative : launch
+                    window.voiceflow.chat.interact({
+                        type: 'launch',
+                        payload: voiceflowConfig.session.variables
+                    }).then(() => {
+                        console.log('✅ Launch réussi');
+                    }).catch((error) => {
+                        console.error('❌ Erreur launch:', error);
+                        
+                        // Deuxième tentative : text
+                        setTimeout(() => {
+                            console.log('🔄 Tentative avec message text...');
+                            window.voiceflow.chat.interact({
+                                type: 'text',
+                                payload: { message: 'start' }
+                            });
+                        }, 500);
+                    });
+                    
+                    console.log('📋 Variables transmises au lancement:', voiceflowConfig.session.variables);
                     
                 }).catch((error) => {
                     console.error('Erreur lors du chargement du widget:', error);
