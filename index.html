@@ -189,9 +189,36 @@
     </div>
 
     <script>
+        // Configuration Voiceflow avec proxy CORS
+        const VOICEFLOW_CONFIG = {
+            projectID: '68a6e2cc67f4932838663766',
+            apiKey: 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP',
+            apiUrl: 'https://cors-anywhere.herokuapp.com/https://general-runtime.voiceflow.com'
+        };
+
+        // Mapping des agents
+        const AGENT_MAP = {
+            '1-3': {
+                title: 'Semaine 1 - Agent 3',
+                description: 'Violence - Sensibilisation',
+                avatar: '1-3'
+            },
+            '1-5': {
+                title: 'Semaine 1 - Agent 5',
+                description: 'Emotion - Colère',
+                avatar: '1-5'
+            },
+            '1-6': {
+                title: 'Semaine 1 - Agent 6',
+                description: 'Emotion - Tristesse',
+                avatar: '1-6'
+            }
+        };
+
         // Variables globales
-        let userID = 'user_' + Date.now();
-        let currentAgent = '1-3';
+        let userID;
+        let currentAgent;
+        let agentInfo;
 
         // Éléments DOM
         const messagesContainer = document.getElementById('chat-messages');
@@ -200,19 +227,146 @@
         const chatForm = document.getElementById('chat-form');
         const loadingMessage = document.getElementById('loading-message');
 
-        // Initialisation simplifiée
+        // Initialisation
         function init() {
-            console.log('Initialisation chat TAO');
-            startDemoMode();
+            const urlParams = new URLSearchParams(window.location.search);
+            currentAgent = urlParams.get('agent') || '1-3';
+            userID = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            agentInfo = AGENT_MAP[currentAgent] || {
+                title: currentAgent.charAt(0).toUpperCase() + currentAgent.slice(1),
+                description: 'Votre assistant personnel',
+                avatar: currentAgent
+            };
+
+            console.log('Initialisation chat TAO pour agent:', currentAgent);
+            startSession();
         }
 
-        function startDemoMode() {
-            loadingMessage.style.display = 'none';
+        async function startSession() {
+            try {
+                console.log('Démarrage pour agent:', currentAgent);
+                
+                const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': VOICEFLOW_CONFIG.apiKey,
+                        'Content-Type': 'application/json',
+                        'versionID': 'development'
+                    },
+                    body: JSON.stringify({
+                        action: {
+                            type: 'launch'
+                        }
+                    })
+                });
+
+                console.log('Status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Réponse launch:', data);
+                
+                loadingMessage.style.display = 'none';
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
+                
+                if (data && data.length > 0) {
+                    processVoiceflowResponse(data);
+                }
+
+                // Envoyer l'agent ID immédiatement
+                sendAgentID();
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                loadingMessage.textContent = 'Erreur de connexion. Veuillez rafraîchir la page.';
+                loadingMessage.style.color = 'red';
+            }
+        }
+
+        async function sendAgentID() {
+            try {
+                console.log('Envoi agent ID:', currentAgent);
+                
+                const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': VOICEFLOW_CONFIG.apiKey,
+                        'Content-Type': 'application/json',
+                        'versionID': 'development'
+                    },
+                    body: JSON.stringify({
+                        action: {
+                            type: 'text',
+                            payload: currentAgent
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Agent ID envoyé, réponse:', data);
+                    if (data && data.length > 0) {
+                        processVoiceflowResponse(data);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Erreur envoi agent ID:', error);
+            }
+        }
+
+        async function sendMessage(message) {
+            if (!message.trim()) return;
+            
+            addMessage('user', message);
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+
+            try {
+                const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': VOICEFLOW_CONFIG.apiKey,
+                        'Content-Type': 'application/json',
+                        'versionID': 'development'
+                    },
+                    body: JSON.stringify({
+                        action: {
+                            type: 'text',
+                            payload: message
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        processVoiceflowResponse(data);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Erreur message:', error);
+                addMessage('bot', 'Désolé, problème technique.');
+            }
+
             messageInput.disabled = false;
             sendButton.disabled = false;
             messageInput.focus();
-            
-            // Chat prêt à recevoir des messages - pas de messages automatiques
+        }
+
+        function processVoiceflowResponse(responseArray) {
+            responseArray.forEach(item => {
+                if (item.type === 'text' && item.payload?.message) {
+                    addMessage('bot', item.payload.message);
+                }
+            });
         }
 
         function addMessage(sender, content) {
@@ -237,17 +391,6 @@
             
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function sendMessage(message) {
-            if (!message.trim()) return;
-            
-            addMessage('user', message);
-            
-            // Réponse automatique de démo
-            setTimeout(() => {
-                addMessage('bot', "Très bonne question ! Tu peux me poser d'autres questions si tu veux.");
-            }, 1000);
         }
 
         // Gestionnaires d'événements
