@@ -408,8 +408,18 @@
             
             const avatar = document.createElement('div');
             avatar.className = 'message-avatar';
-            // Pour le bot, l'image tao.jpg s'affiche via CSS, pas besoin de texte
-            avatar.textContent = sender === 'bot' ? '' : 'U';
+            
+            if (sender === 'bot') {
+                const img = document.createElement('img');
+                img.src = 'tao.jpg';
+                img.alt = 'Agent Avatar';
+                img.onerror = function() {
+                    this.parentElement.textContent = 'TAO';
+                };
+                avatar.appendChild(img);
+            } else {
+                avatar.textContent = 'U';
+            }
             
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
