@@ -407,13 +407,23 @@
             messageDiv.className = `message ${sender}`;
             
             const avatar = document.createElement('div');
-            avatar.className = 'message-avatar';
             
-            if (sender === 'user') {
-                avatar.textContent = 'U';
+            if (sender === 'bot') {
+                avatar.className = 'message-avatar';
+                const img = document.createElement('img');
+                img.src = 'https://soniagrimm.github.io/voiceflow-widget/Tao.jpg';
+                img.alt = 'Tao';
+                img.onerror = function() {
+                    this.parentElement.className = 'message-avatar-fallback';
+                    this.parentElement.textContent = 'TAO';
+                    this.remove();
+                };
+                avatar.appendChild(img);
+            } else {
+                avatar.className = 'message-avatar-fallback';
                 avatar.style.background = '#4a90e2';
+                avatar.textContent = 'U';
             }
-            // Pour le bot, l'image s'affiche via CSS background-image
             
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
