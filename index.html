@@ -1,27 +1,4 @@
-async function startSession() {
-            try {
-                console.log('Démarrage pour agent:', currentAgent);
-                
-                // Mode démo ou API réelle
-                const USE_DEMO_MODE = false; // Changez à 'true' pour la démo rapide
-                
-                if (USE_DEMO_MODE) {
-                    loadingMessage.style.display = 'none';
-                    messageInput.disabled = false;
-                    sendButton.disabled = false;
-                    messageInput.focus();
-                    
-                    // Simuler les réponses Voiceflow
-                    setTimeout(() => {
-                        addMessage('bot', 'Salut ! Je test le flow');
-                    }, 500);
-                    
-                    setTimeout(() => {
-                        addMessage('bot', 'Salut !');
-                    }, 1000);
-                    
-                    setTimeout(() => {
-                        addMessage('bot', "C'est super ! Tu as déjà appris plein de choses ! Tu as appris quand appliquer le \"jeu de l'idiot\" et on va bientôt t'apprendre comment l'appliquer. Et tu vas pouvoir t'entraîner avec nous ! 🐺 Mais avant cela, il est important que tu comprennes quand le jeu de l'idiot n'est pas applicable. Dans quel cas, tu ne peux pas utiliser les réponses que nous allons t'apprendre ? Est-ce que tu as une petite idée ? Quand est-ce que tu dois aller demander de l'aide ?");<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -34,122 +11,120 @@ async function startSession() {
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #ffb87d 0%, #a05487 100%);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
         .chat-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            max-width: 800px;
-            margin: 0 auto;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background: white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            display: table;
+            width: 100%;
+            height: 100%;
         }
 
         .chat-header {
             background: #a05487;
             height: 80px;
-            border-radius: 0;
+            display: table-row;
+            width: 100%;
         }
 
-        .agent-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #2c3e50;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-
-        .agent-info h1 {
-            font-size: 18px;
-            margin-bottom: 2px;
-        }
-
-        .agent-info p {
-            font-size: 12px;
-            opacity: 0.8;
+        .chat-content {
+            display: table-row;
+            height: 100%;
+            width: 100%;
         }
 
         .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
             background: #f8f9fa;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+            display: table-cell;
+            vertical-align: top;
+        }
+
+        .chat-input-area {
+            background: white;
+            padding: 15px 20px;
+            border-top: 1px solid #e1e8ed;
+            display: table-row;
+            height: 70px;
         }
 
         .message {
             margin-bottom: 15px;
-            display: flex;
-            gap: 10px;
-            position: relative;
-            z-index: 20;
             clear: both;
         }
 
+        .message.bot {
+            text-align: left;
+        }
+
         .message.user {
-            flex-direction: row-reverse;
+            text-align: right;
         }
 
         .message-content {
+            display: inline-block;
             max-width: 70%;
             padding: 12px 16px;
             border-radius: 18px;
             line-height: 1.4;
+            word-wrap: break-word;
         }
 
         .message.bot .message-content {
             background: white;
             border: 1px solid #e1e8ed;
-            border-bottom-left-radius: 4px;
+            text-align: left;
         }
 
         .message.user .message-content {
             background: #a05487;
             color: white;
-            border-bottom-right-radius: 4px;
+            text-align: left;
         }
 
         .message-avatar {
+            display: inline-block;
             width: 32px;
             height: 32px;
             border-radius: 50%;
             background: #2c3e50;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             color: white;
             font-size: 12px;
-            flex-shrink: 0;
+            text-align: center;
+            line-height: 32px;
+            margin-right: 10px;
+            vertical-align: top;
         }
 
         .message.user .message-avatar {
             background: #a05487;
-        }
-
-        .chat-input-container {
-            padding: 15px 20px;
-            background: white;
-            border-top: 1px solid #e1e8ed;
+            margin-left: 10px;
+            margin-right: 0;
         }
 
         .chat-input-form {
-            display: flex;
-            gap: 10px;
+            display: table;
+            width: 100%;
         }
 
         .chat-input {
-            flex: 1;
+            display: table-cell;
+            width: 100%;
             padding: 12px 16px;
             border: 1px solid #e1e8ed;
             border-radius: 25px;
@@ -157,11 +132,8 @@ async function startSession() {
             font-size: 16px;
         }
 
-        .chat-input:focus {
-            border-color: #a05487;
-        }
-
         .send-button {
+            display: table-cell;
             width: 45px;
             height: 45px;
             border: none;
@@ -169,10 +141,7 @@ async function startSession() {
             color: white;
             border-radius: 50%;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
+            margin-left: 10px;
         }
 
         .send-button:hover {
@@ -189,36 +158,21 @@ async function startSession() {
             padding: 20px;
             color: #666;
         }
-
-        @media (max-width: 768px) {
-            .chat-container {
-                height: 100vh;
-                border-radius: 0;
-            }
-            
-            .message-content {
-                max-width: 85%;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="chat-container">
-        <div class="chat-header">
-            <div class="agent-avatar" id="agent-avatar" style="display: none;">TAO</div>
-            <div class="agent-info" style="display: none;">
-                <h1 id="agent-title">Chargement...</h1>
-                <p id="agent-description">Connexion en cours...</p>
+        <div class="chat-header"></div>
+        
+        <div class="chat-content">
+            <div class="chat-messages" id="chat-messages">
+                <div class="loading-message" id="loading-message">
+                    Initialisation de votre agent...
+                </div>
             </div>
         </div>
 
-        <div class="chat-messages" id="chat-messages">
-            <div class="loading-message" id="loading-message">
-                Initialisation de votre agent...
-            </div>
-        </div>
-
-        <div class="chat-input-container">
+        <div class="chat-input-area">
             <form class="chat-input-form" id="chat-form">
                 <input 
                     type="text" 
@@ -228,45 +182,16 @@ async function startSession() {
                     disabled
                 >
                 <button type="submit" class="send-button" id="send-button" disabled>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
-                    </svg>
+                    →
                 </button>
             </form>
         </div>
     </div>
 
     <script>
-        // Configuration Voiceflow
-        const VOICEFLOW_CONFIG = {
-            projectID: '68a6e2cc67f4932838663766',
-            apiKey: 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP',
-            apiUrl: 'https://general-runtime.voiceflow.com'
-        };
-
-        // Mapping des agents
-        const AGENT_MAP = {
-            '1-3': {
-                title: 'Semaine 1 - Agent 3',
-                description: 'Violence - Sensibilisation',
-                avatar: '1-3'
-            },
-            '1-5': {
-                title: 'Semaine 1 - Agent 5',
-                description: 'Emotion - Colère',
-                avatar: '1-5'
-            },
-            '1-6': {
-                title: 'Semaine 1 - Agent 6',
-                description: 'Emotion - Tristesse',
-                avatar: '1-6'
-            }
-        };
-
         // Variables globales
-        let userID;
-        let currentAgent;
-        let agentInfo;
+        let userID = 'user_' + Date.now();
+        let currentAgent = '1-3';
 
         // Éléments DOM
         const messagesContainer = document.getElementById('chat-messages');
@@ -275,175 +200,65 @@ async function startSession() {
         const chatForm = document.getElementById('chat-form');
         const loadingMessage = document.getElementById('loading-message');
 
-        // Initialisation
+        // Initialisation simplifiée
         function init() {
-            const urlParams = new URLSearchParams(window.location.search);
-            currentAgent = urlParams.get('agent') || 'default';
-            userID = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            
-            agentInfo = AGENT_MAP[currentAgent] || {
-                title: currentAgent.charAt(0).toUpperCase() + currentAgent.slice(1),
-                description: 'Votre assistant personnel',
-                avatar: currentAgent
-            };
-
-            updateAgentInfo();
-            startSession();
+            console.log('Initialisation chat TAO');
+            startDemoMode();
         }
 
-        function updateAgentInfo() {
-            document.getElementById('agent-title').textContent = agentInfo.title;
-            document.getElementById('agent-description').style.display = 'none';
-        }
-
-        async function startSession() {
-            try {
-                console.log('Démarrage pour agent:', currentAgent);
-                
-                const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': VOICEFLOW_CONFIG.apiKey,
-                        'Content-Type': 'application/json',
-                        'versionID': 'development'
-                    },
-                    body: JSON.stringify({
-                        action: {
-                            type: 'launch'
-                        }
-                    })
-                });
-
-                console.log('Status:', response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log('Réponse launch:', data);
-                
-                loadingMessage.style.display = 'none';
-                messageInput.disabled = false;
-                sendButton.disabled = false;
-                messageInput.focus();
-                
-                if (data && data.length > 0) {
-                    processVoiceflowResponse(data);
-                }
-
-                // Envoyer l'agent ID immédiatement
-                sendAgentID();
-                
-            } catch (error) {
-                console.error('Erreur:', error);
-                loadingMessage.textContent = 'Erreur de connexion. Veuillez rafraîchir la page.';
-                loadingMessage.style.color = 'red';
-            }
-        }
-
-        async function sendAgentID() {
-            try {
-                console.log('Envoi agent ID:', currentAgent);
-                
-                const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': VOICEFLOW_CONFIG.apiKey,
-                        'Content-Type': 'application/json',
-                        'versionID': 'development'
-                    },
-                    body: JSON.stringify({
-                        action: {
-                            type: 'text',
-                            payload: currentAgent
-                        }
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Agent ID envoyé, réponse:', data);
-                    if (data && data.length > 0) {
-                        processVoiceflowResponse(data);
-                    }
-                }
-                
-            } catch (error) {
-                console.error('Erreur envoi agent ID:', error);
-            }
-        }
-
-        async function sendMessage(message) {
-            if (!message.trim()) return;
-
-            addMessage('user', message);
-            messageInput.disabled = true;
-            sendButton.disabled = true;
-
-            try {
-                const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': VOICEFLOW_CONFIG.apiKey,
-                        'Content-Type': 'application/json',
-                        'versionID': 'development'
-                    },
-                    body: JSON.stringify({
-                        action: {
-                            type: 'text',
-                            payload: message
-                        }
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.length > 0) {
-                        processVoiceflowResponse(data);
-                    }
-                }
-
-            } catch (error) {
-                console.error('Erreur message:', error);
-                addMessage('bot', 'Désolé, problème technique.');
-            }
-
+        function startDemoMode() {
+            loadingMessage.style.display = 'none';
             messageInput.disabled = false;
             sendButton.disabled = false;
             messageInput.focus();
-        }
-
-        function processVoiceflowResponse(responseArray) {
-            responseArray.forEach(item => {
-                if (item.type === 'text' && item.payload?.message) {
-                    addMessage('bot', item.payload.message);
-                }
-            });
+            
+            // Messages de démonstration
+            setTimeout(() => {
+                addMessage('bot', 'Salut ! Je test le flow');
+            }, 500);
+            
+            setTimeout(() => {
+                addMessage('bot', 'Salut !');
+            }, 1000);
+            
+            setTimeout(() => {
+                addMessage('bot', "C'est super ! Tu as déjà appris plein de choses ! Tu as appris quand appliquer le \"jeu de l'idiot\" et on va bientôt t'apprendre comment l'appliquer. Et tu vas pouvoir t'entraîner avec nous ! 🐺 Mais avant cela, il est important que tu comprennes quand le jeu de l'idiot n'est pas applicable. Dans quel cas, tu ne peux pas utiliser les réponses que nous allons t'apprendre ? Est-ce que tu as une petite idée ? Quand est-ce que tu dois aller demander de l'aide ?");
+            }, 1500);
         }
 
         function addMessage(sender, content) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}`;
             
-            const avatar = document.createElement('div');
+            const avatar = document.createElement('span');
             avatar.className = 'message-avatar';
-            
-            if (sender === 'bot') {
-                avatar.textContent = 'TAO';
-            } else {
-                avatar.textContent = 'U';
-            }
+            avatar.textContent = sender === 'bot' ? 'TAO' : 'U';
             
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
             messageContent.textContent = content;
             
-            messageDiv.appendChild(avatar);
-            messageDiv.appendChild(messageContent);
+            if (sender === 'bot') {
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(messageContent);
+            } else {
+                messageDiv.appendChild(messageContent);
+                messageDiv.appendChild(avatar);
+            }
             
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function sendMessage(message) {
+            if (!message.trim()) return;
+            
+            addMessage('user', message);
+            
+            // Réponse automatique de démo
+            setTimeout(() => {
+                addMessage('bot', "Très bonne question ! Tu peux me poser d'autres questions si tu veux.");
+            }, 1000);
         }
 
         // Gestionnaires d'événements
@@ -458,11 +273,6 @@ async function startSession() {
 
         // Démarrer l'application
         init();
-
-        console.log('Chat TAO initialisé', {
-            agent: currentAgent,
-            userID: userID
-        });
     </script>
 </body>
 </html>
