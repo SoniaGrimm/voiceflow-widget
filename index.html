@@ -181,15 +181,10 @@
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <div class="header-background"></div>
-            <div class="header-content">
-                <div class="agent-avatar" id="agent-avatar">
-                    <span class="agent-avatar-text" id="agent-avatar-text">TAO</span>
-                </div>
-                <div class="agent-info">
-                    <h1 id="agent-title">Chargement...</h1>
-                    <p id="agent-description">Connexion en cours...</p>
-                </div>
+            <div class="agent-avatar" id="agent-avatar">TAO</div>
+            <div class="agent-info">
+                <h1 id="agent-title">Chargement...</h1>
+                <p id="agent-description">Connexion en cours...</p>
             </div>
         </div>
 
@@ -306,26 +301,15 @@
                 console.log('Réponse:', data);
                 
                 loadingMessage.style.display = 'none';
-                
-                // Ajouter la carte de bienvenue visuelle
-                addWelcomeCard();
-                
                 messageInput.disabled = false;
                 sendButton.disabled = false;
                 messageInput.focus();
                 
-                // Traiter d'abord les messages de Voiceflow, puis l'agent ID
                 if (data && data.length > 0) {
-                    // Filtrer le message "Salut ! Je test le flow" pour ne pas l'afficher
-                    const filteredData = data.filter(item => 
-                        !(item.type === 'text' && item.payload?.message?.includes('Salut ! Je test le flow'))
-                    );
-                    if (filteredData.length > 0) {
-                        processVoiceflowResponse(filteredData);
-                    }
+                    processVoiceflowResponse(data);
                 }
 
-                // Après la carte de bienvenue, envoyer l'ID de l'agent
+                // Après le premier message, envoyer l'ID de l'agent
                 setTimeout(() => {
                     sendAgentID();
                 }, 2000);
