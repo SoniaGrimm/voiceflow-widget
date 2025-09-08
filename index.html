@@ -1,4 +1,27 @@
-<!DOCTYPE html>
+async function startSession() {
+            try {
+                console.log('Démarrage pour agent:', currentAgent);
+                
+                // Mode démo ou API réelle
+                const USE_DEMO_MODE = false; // Changez à 'true' pour la démo rapide
+                
+                if (USE_DEMO_MODE) {
+                    loadingMessage.style.display = 'none';
+                    messageInput.disabled = false;
+                    sendButton.disabled = false;
+                    messageInput.focus();
+                    
+                    // Simuler les réponses Voiceflow
+                    setTimeout(() => {
+                        addMessage('bot', 'Salut ! Je test le flow');
+                    }, 500);
+                    
+                    setTimeout(() => {
+                        addMessage('bot', 'Salut !');
+                    }, 1000);
+                    
+                    setTimeout(() => {
+                        addMessage('bot', "C'est super ! Tu as déjà appris plein de choses ! Tu as appris quand appliquer le \"jeu de l'idiot\" et on va bientôt t'apprendre comment l'appliquer. Et tu vas pouvoir t'entraîner avec nous ! 🐺 Mais avant cela, il est important que tu comprennes quand le jeu de l'idiot n'est pas applicable. Dans quel cas, tu ne peux pas utiliser les réponses que nous allons t'apprendre ? Est-ce que tu as une petite idée ? Quand est-ce que tu dois aller demander de l'aide ?");<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
