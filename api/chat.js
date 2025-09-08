@@ -1,24 +1,23 @@
-// api/chat.js - COPIEZ CE CODE EXACT
+// api/chat.js - Lit l'agent_id depuis l'URL
 export default async function handler(req, res) {
-  // Configuration CORS pour Adalo
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
-  // Répondre aux requêtes OPTIONS (preflight)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Accepter seulement POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { message, agent_id, user_id } = req.body;
+    // Lire depuis l'URL ou depuis le body
+    const message = req.body.message;
+    const agent_id = req.query.agent || req.body.agent_id;
+    const user_id = req.query.user || req.body.user_id;
     
-    // Validation des données
     if (!message || !agent_id) {
       return res.status(400).json({ 
         success: false,
@@ -26,15 +25,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // VOS DONNÉES VOICEFLOW
-    const VOICEFLOW_PROJECT_ID = '68a6e2cc67f4932838663766';
-    const VOICEFLOW_VERSION_ID = '68a6e2cc67f4932838663767';
     const VOICEFLOW_API_KEY = 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP';
-    
-    // Générer un user_id unique si pas fourni
+    const VOICEFLOW_VERSION_ID = '68a6e2cc67f4932838663767';
     const sessionUserId = user_id || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Données pour l'API Voiceflow - CORRECTION ICI
     const voiceflowPayload = {
       action: {
         type: 'text',
@@ -49,14 +43,13 @@ export default async function handler(req, res) {
       session: {
         userID: sessionUserId,
         variables: {
-          agentID: agent_id  // ← CORRIGÉ : agentID au lieu de agent_id
+          agentID: agent_id
         }
       }
     };
 
-    console.log('Envoi à Voiceflow:', { agent_id, message, sessionUserId });
+    console.log(`Chat avec agent: ${agent_id}, message: ${message}`);
 
-    // Appel à l'API Voiceflow
     const voiceflowResponse = await fetch(
       `https://general-runtime.voiceflow.com/state/user/${sessionUserId}/interact`,
       {
@@ -71,15 +64,11 @@ export default async function handler(req, res) {
     );
 
     if (!voiceflowResponse.ok) {
-      const errorText = await voiceflowResponse.text();
-      console.error('Erreur Voiceflow:', voiceflowResponse.status, errorText);
       throw new Error(`Voiceflow API error: ${voiceflowResponse.status}`);
     }
 
     const voiceflowResult = await voiceflowResponse.json();
-    console.log('Réponse Voiceflow:', voiceflowResult);
     
-    // Extraire la réponse textuelle
     let responseText = '';
     if (voiceflowResult && Array.isArray(voiceflowResult)) {
       for (const item of voiceflowResult) {
@@ -89,19 +78,14 @@ export default async function handler(req, res) {
       }
     }
 
-    // Message par défaut si pas de réponse
     if (!responseText.trim()) {
       responseText = "Je n'ai pas bien compris votre message. Pouvez-vous reformuler ?";
     }
 
-    // Formater le nom de l'agent pour l'affichage
-    const agentName = formatAgentName(agent_id);
-
-    // Réponse pour Adalo
     return res.status(200).json({
       success: true,
       response: responseText.trim(),
-      agent_name: agentName,
+      agent_name: formatAgentName(agent_id),
       agent_id: agent_id,
       user_id: sessionUserId,
       timestamp: new Date().toISOString()
@@ -112,13 +96,11 @@ export default async function handler(req, res) {
     return res.status(500).json({
       success: false,
       error: 'Erreur interne du serveur',
-      message: error.message,
-      details: 'Vérifiez les logs Vercel pour plus de détails'
+      message: error.message
     });
   }
 }
 
-// Fonction utilitaire pour formater le nom de l'agent
 function formatAgentName(agent_id) {
   if (agent_id && agent_id.includes('-')) {
     const parts = agent_id.split('-');
