@@ -189,14 +189,9 @@
     </div>
 
     <script>
-        // Configuration Voiceflow avec proxy CORS
+        // Configuration avec votre proxy Wix personnalisé
         const VOICEFLOW_CONFIG = {
-            projectID: '68a6e2cc67f4932838663766',
-            versionID: '68a6e2cc67f49328386b3767',
-            apiKey: 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP',
-            baseUrl: 'https://general-runtime.voiceflow.com',
-            // Utilisation d'un proxy CORS stable
-            proxyUrl: 'https://cors-proxy.htmldriven.com/?url='
+            proxyUrl: 'https://www.sonia-grimm.com/_functions/voiceflowProxy'
         };
 
         // Variables globales
@@ -210,18 +205,17 @@
         const chatForm = document.getElementById('chat-form');
         const loadingMessage = document.getElementById('loading-message');
 
-        // Appel API via proxy CORS
+        // Appel API via votre proxy Wix
         async function callVoiceflowAPI(action) {
-            const url = `${VOICEFLOW_CONFIG.proxyUrl}${encodeURIComponent(`${VOICEFLOW_CONFIG.baseUrl}/state/user/${userID}/interact`)}`;
-            
-            const response = await fetch(url, {
+            const response = await fetch(VOICEFLOW_CONFIG.proxyUrl, {
                 method: 'POST',
                 headers: {
-                    'Authorization': VOICEFLOW_CONFIG.apiKey,
-                    'Content-Type': 'application/json',
-                    'versionID': VOICEFLOW_CONFIG.versionID
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ action })
+                body: JSON.stringify({
+                    userID: userID,
+                    action: action
+                })
             });
 
             if (!response.ok) {
@@ -238,6 +232,7 @@
             userID = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
             console.log('Initialisation chat TAO pour agent:', currentAgent);
+            console.log('User ID:', userID);
             startSession();
         }
 
@@ -260,7 +255,7 @@
                     processVoiceflowResponse(data);
                 }
 
-                // Envoyer l'agent ID
+                // Envoyer l'agent ID après un délai
                 setTimeout(async () => {
                     try {
                         console.log('Envoi agent ID:', currentAgent);
@@ -268,7 +263,7 @@
                             type: 'text',
                             payload: currentAgent
                         });
-                        console.log('Agent ID envoyé:', agentData);
+                        console.log('Agent ID envoyé, réponse:', agentData);
                         processVoiceflowResponse(agentData);
                     } catch (error) {
                         console.error('Erreur envoi agent ID:', error);
@@ -277,64 +272,7 @@
                 
             } catch (error) {
                 console.error('Erreur:', error);
-                loadingMessage.textContent = 'Erreur de connexion. Tentative avec méthode alternative...';
-                loadingMessage.style.color = 'orange';
-                
-                // Fallback avec un autre proxy
-                setTimeout(() => tryAlternativeProxy(), 2000);
-            }
-        }
-
-        async function tryAlternativeProxy() {
-            try {
-                console.log('Tentative avec proxy alternatif...');
-                
-                // Utiliser un proxy différent
-                const altUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`${VOICEFLOW_CONFIG.baseUrl}/state/user/${userID}/interact`)}`;
-                
-                const response = await fetch(altUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': VOICEFLOW_CONFIG.apiKey,
-                        'Content-Type': 'application/json',
-                        'versionID': VOICEFLOW_CONFIG.versionID
-                    },
-                    body: JSON.stringify({
-                        action: { type: 'launch' }
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    loadingMessage.style.display = 'none';
-                    messageInput.disabled = false;
-                    sendButton.disabled = false;
-                    messageInput.focus();
-                    
-                    processVoiceflowResponse(data);
-                    
-                    // Mettre à jour la config pour utiliser ce proxy
-                    VOICEFLOW_CONFIG.proxyUrl = 'https://api.allorigins.win/raw?url=';
-                    
-                    // Envoyer l'agent ID
-                    setTimeout(async () => {
-                        try {
-                            const agentData = await callVoiceflowAPI({
-                                type: 'text',
-                                payload: currentAgent
-                            });
-                            processVoiceflowResponse(agentData);
-                        } catch (error) {
-                            console.error('Erreur envoi agent ID:', error);
-                        }
-                    }, 1000);
-                } else {
-                    throw new Error('Proxy alternatif échoué');
-                }
-                
-            } catch (error) {
-                console.error('Erreur proxy alternatif:', error);
-                loadingMessage.textContent = 'Impossible de se connecter à Voiceflow depuis Adalo. CORS bloqué.';
+                loadingMessage.textContent = `Erreur: ${error.message}. Vérification du proxy...`;
                 loadingMessage.style.color = 'red';
             }
         }
@@ -358,7 +296,7 @@
 
             } catch (error) {
                 console.error('Erreur message:', error);
-                addMessage('bot', 'Problème de connexion. Réessayez.');
+                addMessage('bot', 'Erreur de connexion. Vérifiez que le proxy Wix fonctionne.');
             }
 
             messageInput.disabled = false;
