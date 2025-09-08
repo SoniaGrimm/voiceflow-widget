@@ -48,19 +48,6 @@
             flex-shrink: 0;
         }
 
-        .agent-avatar-fallback {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #2c3e50;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-
         .agent-info h1 {
             font-size: 18px;
             margin-bottom: 2px;
@@ -122,19 +109,6 @@
 
         .message.user .message-avatar {
             background: #a05487;
-        }
-
-        .message-avatar-fallback {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #2c3e50;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            flex-shrink: 0;
         }
 
         .chat-input-container {
@@ -237,13 +211,11 @@
     </div>
 
     <script>
-        // Configuration Voiceflow avec fallback
+        // Configuration Voiceflow
         const VOICEFLOW_CONFIG = {
             projectID: '68a6e2cc67f4932838663766',
             apiKey: 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP',
-            apiUrl: isAdaloPreview 
-                ? 'https://cors-anywhere.herokuapp.com/https://general-runtime.voiceflow.com'
-                : 'https://general-runtime.voiceflow.com'
+            apiUrl: 'https://general-runtime.voiceflow.com'
         };
 
         // Mapping des agents
@@ -265,36 +237,10 @@
             }
         };
 
-        // Fonction pour afficher les logs visuellement
-        function displayLog(message, type = 'info') {
-            const logDiv = document.createElement('div');
-            logDiv.style.cssText = `
-                padding: 5px; 
-                margin: 2px; 
-                font-size: 11px; 
-                border-radius: 3px;
-                background: ${type === 'error' ? '#ffebee' : '#e3f2fd'};
-                color: ${type === 'error' ? '#c62828' : '#1565c0'};
-                border: 1px solid ${type === 'error' ? '#ffcdd2' : '#bbdefb'};
-            `;
-            logDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            messagesContainer.appendChild(logDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        // Remplacer console.log par displayLog
-        const originalConsoleLog = console.log;
-        const originalConsoleError = console.error;
-        
-        console.log = function(...args) {
-            displayLog(args.join(' '), 'info');
-            originalConsoleLog.apply(console, args);
-        };
-        
-        console.error = function(...args) {
-            displayLog(args.join(' '), 'error');
-            originalConsoleError.apply(console, args);
-        };
+        // Variables globales
+        let userID;
+        let currentAgent;
+        let agentInfo;
 
         // Éléments DOM
         const messagesContainer = document.getElementById('chat-messages');
@@ -321,13 +267,12 @@
 
         function updateAgentInfo() {
             document.getElementById('agent-title').textContent = agentInfo.title;
-            document.getElementById('agent-description').style.display = 'none'; // Masquer la description
-            // L'avatar utilise maintenant l'image tao.jpg en CSS, pas besoin de texte
+            document.getElementById('agent-description').style.display = 'none';
         }
 
         async function startSession() {
             try {
-                console.log('Démarrage simple pour agent:', currentAgent);
+                console.log('Démarrage pour agent:', currentAgent);
                 
                 const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
                     method: 'POST',
@@ -350,7 +295,7 @@
                 }
 
                 const data = await response.json();
-                console.log('Réponse:', data);
+                console.log('Réponse launch:', data);
                 
                 loadingMessage.style.display = 'none';
                 messageInput.disabled = false;
@@ -361,10 +306,8 @@
                     processVoiceflowResponse(data);
                 }
 
-                // Réduire le délai d'envoi de l'agent ID
-                setTimeout(() => {
-                    sendAgentID();
-                }, 500);
+                // Envoyer l'agent ID immédiatement
+                sendAgentID();
                 
             } catch (error) {
                 console.error('Erreur:', error);
@@ -373,10 +316,9 @@
             }
         }
 
-        // Fonction pour envoyer l'ID de l'agent après le démarrage
         async function sendAgentID() {
             try {
-                console.log('Envoi de l\'agent ID:', currentAgent);
+                console.log('Envoi agent ID:', currentAgent);
                 
                 const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
                     method: 'POST',
@@ -412,8 +354,6 @@
             addMessage('user', message);
             messageInput.disabled = true;
             sendButton.disabled = true;
-            
-            displayLog(`Envoi message utilisateur: "${message}"`, 'info');
 
             try {
                 const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
@@ -431,22 +371,14 @@
                     })
                 });
 
-                displayLog(`Message utilisateur - Status: ${response.status}`, response.ok ? 'info' : 'error');
-
                 if (response.ok) {
                     const data = await response.json();
-                    displayLog(`Réponse reçue: ${JSON.stringify(data)}`, 'info');
                     if (data && data.length > 0) {
                         processVoiceflowResponse(data);
-                    } else {
-                        displayLog('Aucune réponse de Voiceflow pour message utilisateur', 'error');
                     }
-                } else {
-                    displayLog(`Erreur HTTP: ${response.status} ${response.statusText}`, 'error');
                 }
 
             } catch (error) {
-                displayLog(`Erreur envoi message: ${error.message}`, 'error');
                 console.error('Erreur message:', error);
                 addMessage('bot', 'Désolé, problème technique.');
             }
@@ -475,7 +407,6 @@
                 avatar.textContent = 'TAO';
             } else {
                 avatar.textContent = 'U';
-                avatar.style.background = '#a05487';
             }
             
             const messageContent = document.createElement('div');
@@ -502,7 +433,7 @@
         // Démarrer l'application
         init();
 
-        console.log('Chat TAO simple initialisé', {
+        console.log('Chat TAO initialisé', {
             agent: currentAgent,
             userID: userID
         });
