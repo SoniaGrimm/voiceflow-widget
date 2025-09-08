@@ -189,9 +189,9 @@
     </div>
 
     <script>
-        // Configuration avec votre proxy Wix personnalisé
+        // Configuration avec votre fonction Netlify
         const VOICEFLOW_CONFIG = {
-            proxyUrl: 'https://www.sonia-grimm.com/_functions/voiceflowProxy'
+            proxyUrl: 'https://magical-paletas-861505.netlify.app/.netlify/functions/voiceflow'
         };
 
         // Variables globales
@@ -205,7 +205,7 @@
         const chatForm = document.getElementById('chat-form');
         const loadingMessage = document.getElementById('loading-message');
 
-        // Appel API via votre proxy Wix
+        // Appel API via votre fonction Netlify
         async function callVoiceflowAPI(action) {
             const response = await fetch(VOICEFLOW_CONFIG.proxyUrl, {
                 method: 'POST',
@@ -272,7 +272,7 @@
                 
             } catch (error) {
                 console.error('Erreur:', error);
-                loadingMessage.textContent = `Erreur: ${error.message}. Vérification du proxy...`;
+                loadingMessage.textContent = `Erreur: ${error.message}`;
                 loadingMessage.style.color = 'red';
             }
         }
@@ -296,7 +296,7 @@
 
             } catch (error) {
                 console.error('Erreur message:', error);
-                addMessage('bot', 'Erreur de connexion. Vérifiez que le proxy Wix fonctionne.');
+                addMessage('bot', 'Erreur de connexion.');
             }
 
             messageInput.disabled = false;
