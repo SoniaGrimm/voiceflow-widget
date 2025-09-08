@@ -1,278 +1,126 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat TAO - Agent Voiceflow</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            height: 100%;
-            overflow: hidden;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #ffb87d 0%, #a05487 100%);
-        }
-
-        .chat-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: white;
-            display: table;
-            width: 100%;
-            height: 100%;
-        }
-
-        .chat-header {
-            background: #a05487;
-            height: 80px;
-            display: table-row;
-            width: 100%;
-        }
-
-        .chat-content {
-            display: table-row;
-            height: 100%;
-            width: 100%;
-        }
-
-        .chat-messages {
-            background: #f8f9fa;
-            padding: 20px;
-            height: 100%;
-            overflow-y: auto;
-            display: table-cell;
-            vertical-align: top;
-        }
-
-        .chat-input-area {
-            background: white;
-            padding: 15px 20px;
-            border-top: 1px solid #e1e8ed;
-            display: table-row;
-            height: 70px;
-        }
-
-        .message {
-            margin-bottom: 15px;
-            clear: both;
-        }
-
-        .message.bot {
-            text-align: left;
-        }
-
-        .message.user {
-            text-align: right;
-        }
-
-        .message-content {
-            display: inline-block;
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .message.bot .message-content {
-            background: white;
-            border: 1px solid #e1e8ed;
-            text-align: left;
-        }
-
-        .message.user .message-content {
-            background: #a05487;
-            color: white;
-            text-align: left;
-        }
-
-        .message-avatar {
-            display: inline-block;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #2c3e50;
-            color: white;
-            font-size: 12px;
-            text-align: center;
-            line-height: 32px;
-            margin-right: 10px;
-            vertical-align: top;
-        }
-
-        .message.user .message-avatar {
-            background: #a05487;
-            margin-left: 10px;
-            margin-right: 0;
-        }
-
-        .chat-input-form {
-            display: table;
-            width: 100%;
-        }
-
-        .chat-input {
-            display: table-cell;
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #e1e8ed;
-            border-radius: 25px;
-            outline: none;
-            font-size: 16px;
-        }
-
-        .send-button {
-            display: table-cell;
-            width: 45px;
-            height: 45px;
-            border: none;
-            background: #a05487;
-            color: white;
-            border-radius: 50%;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-
-        .send-button:hover {
-            background: #8a4574;
-        }
-
-        .send-button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .loading-message {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat TAO - Voiceflow</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+    }
+    .msg {
+      margin: 8px 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      max-width: 70%;
+    }
+    .bot {
+      background: #eee;
+      align-self: flex-start;
+    }
+    .user {
+      background: #a05487;
+      color: #fff;
+      align-self: flex-end;
+    }
+    #input-area {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+    #input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+    }
+    #send {
+      background: #a05487;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      cursor: pointer;
+    }
+    #send:hover {
+      background: #8a4574;
+    }
+  </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header"></div>
-        
-        <div class="chat-content">
-            <div class="chat-messages" id="chat-messages">
-                <div class="loading-message" id="loading-message">
-                    Initialisation de votre agent...
-                </div>
-            </div>
-        </div>
+  <div id="messages"></div>
+  <div id="input-area">
+    <input id="input" type="text" placeholder="Écris ton message..." />
+    <button id="send">Envoyer</button>
+  </div>
 
-        <div class="chat-input-area">
-            <form class="chat-input-form" id="chat-form">
-                <input 
-                    type="text" 
-                    class="chat-input" 
-                    id="message-input" 
-                    placeholder="Tapez votre message..."
-                    disabled
-                >
-                <button type="submit" class="send-button" id="send-button" disabled>
-                    →
-                </button>
-            </form>
-        </div>
-    </div>
+  <script>
+    const API_KEY = "Bearer VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP";
+    const USER_ID = "test-user"; // tu peux mettre un ID dynamique
+    const RUNTIME_URL = `https://general-runtime.voiceflow.com/state/user/${USER_ID}/interact`;
 
-    <script>
-        // Variables globales
-        let userID = 'user_' + Date.now();
-        let currentAgent = '1-3';
+    const messagesDiv = document.getElementById("messages");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("send");
 
-        // Éléments DOM
-        const messagesContainer = document.getElementById('chat-messages');
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
-        const chatForm = document.getElementById('chat-form');
-        const loadingMessage = document.getElementById('loading-message');
+    function addMessage(text, sender) {
+      const div = document.createElement("div");
+      div.className = "msg " + sender;
+      div.textContent = text;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
 
-        // Initialisation simplifiée
-        function init() {
-            console.log('Initialisation chat TAO');
-            startDemoMode();
-        }
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage(text, "user");
+      input.value = "";
 
-        function startDemoMode() {
-            loadingMessage.style.display = 'none';
-            messageInput.disabled = false;
-            sendButton.disabled = false;
-            messageInput.focus();
-            
-            // Messages de démonstration
-            setTimeout(() => {
-                addMessage('bot', 'Salut ! Je test le flow');
-            }, 500);
-            
-            setTimeout(() => {
-                addMessage('bot', 'Salut !');
-            }, 1000);
-            
-            setTimeout(() => {
-                addMessage('bot', "C'est super ! Tu as déjà appris plein de choses ! Tu as appris quand appliquer le \"jeu de l'idiot\" et on va bientôt t'apprendre comment l'appliquer. Et tu vas pouvoir t'entraîner avec nous ! 🐺 Mais avant cela, il est important que tu comprennes quand le jeu de l'idiot n'est pas applicable. Dans quel cas, tu ne peux pas utiliser les réponses que nous allons t'apprendre ? Est-ce que tu as une petite idée ? Quand est-ce que tu dois aller demander de l'aide ?");
-            }, 1500);
-        }
-
-        function addMessage(sender, content) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-            
-            const avatar = document.createElement('span');
-            avatar.className = 'message-avatar';
-            avatar.textContent = sender === 'bot' ? 'TAO' : 'U';
-            
-            const messageContent = document.createElement('div');
-            messageContent.className = 'message-content';
-            messageContent.textContent = content;
-            
-            if (sender === 'bot') {
-                messageDiv.appendChild(avatar);
-                messageDiv.appendChild(messageContent);
-            } else {
-                messageDiv.appendChild(messageContent);
-                messageDiv.appendChild(avatar);
-            }
-            
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function sendMessage(message) {
-            if (!message.trim()) return;
-            
-            addMessage('user', message);
-            
-            // Réponse automatique de démo
-            setTimeout(() => {
-                addMessage('bot', "Très bonne question ! Tu peux me poser d'autres questions si tu veux.");
-            }, 1000);
-        }
-
-        // Gestionnaires d'événements
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const message = messageInput.value.trim();
-            if (message) {
-                sendMessage(message);
-                messageInput.value = '';
-            }
+      try {
+        const res = await fetch(RUNTIME_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": API_KEY,
+            "Content-Type": "application/json",
+            "versionID": "production"
+          },
+          body: JSON.stringify({
+            action: { type: "text", payload: text }
+          })
         });
 
-        // Démarrer l'application
-        init();
-    </script>
+        const data = await res.json();
+
+        // Voiceflow renvoie une liste "trace"
+        data.forEach(trace => {
+          if (trace.type === "speak" && trace.payload?.message) {
+            addMessage(trace.payload.message, "bot");
+          }
+        });
+
+      } catch (err) {
+        console.error(err);
+        addMessage("⚠️ Erreur de connexion à Voiceflow", "bot");
+      }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    // Message de bienvenue
+    addMessage("👋 Bonjour, je suis TAO. Pose-moi une question !", "bot");
+  </script>
 </body>
 </html>
