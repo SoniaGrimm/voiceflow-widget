@@ -269,7 +269,7 @@
 
         function updateAgentInfo() {
             document.getElementById('agent-title').textContent = agentInfo.title;
-            document.getElementById('agent-description').textContent = agentInfo.description;
+            document.getElementById('agent-description').style.display = 'none'; // Masquer la description
             document.getElementById('agent-avatar').textContent = agentInfo.avatar;
         }
 
