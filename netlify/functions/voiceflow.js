@@ -1,4 +1,7 @@
 exports.handler = async (event, context) => {
+  // Import fetch pour Netlify Functions
+  const fetch = (await import('node-fetch')).default;
+  
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -17,6 +20,14 @@ exports.handler = async (event, context) => {
     const userID = data.userID;
     const action = data.action;
     
+    if (!userID) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'userID requis' })
+      };
+    }
+    
     const url = `https://general-runtime.voiceflow.com/state/user/${userID}/interact`;
     
     const response = await fetch(url, {
@@ -30,12 +41,15 @@ exports.handler = async (event, context) => {
     });
 
     const result = await response.text();
+    
     return {
       statusCode: response.status,
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: result
     };
+    
   } catch (error) {
+    console.error('Erreur dans la fonction:', error);
     return {
       statusCode: 500,
       headers,
