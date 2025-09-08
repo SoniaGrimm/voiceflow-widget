@@ -212,18 +212,7 @@
             sendButton.disabled = false;
             messageInput.focus();
             
-            // Messages de démonstration
-            setTimeout(() => {
-                addMessage('bot', 'Salut ! Je test le flow');
-            }, 500);
-            
-            setTimeout(() => {
-                addMessage('bot', 'Salut !');
-            }, 1000);
-            
-            setTimeout(() => {
-                addMessage('bot', "C'est super ! Tu as déjà appris plein de choses ! Tu as appris quand appliquer le \"jeu de l'idiot\" et on va bientôt t'apprendre comment l'appliquer. Et tu vas pouvoir t'entraîner avec nous ! 🐺 Mais avant cela, il est important que tu comprennes quand le jeu de l'idiot n'est pas applicable. Dans quel cas, tu ne peux pas utiliser les réponses que nous allons t'apprendre ? Est-ce que tu as une petite idée ? Quand est-ce que tu dois aller demander de l'aide ?");
-            }, 1500);
+            // Chat prêt à recevoir des messages - pas de messages automatiques
         }
 
         function addMessage(sender, content) {
