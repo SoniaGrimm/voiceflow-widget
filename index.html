@@ -328,9 +328,9 @@
                 const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${VOICEFLOW_CONFIG.apiKey}`,
+                        'Authorization': VOICEFLOW_CONFIG.apiKey,
                         'Content-Type': 'application/json',
-                        'versionID': 'production'
+                        'versionID': 'development'
                     },
                     body: JSON.stringify({
                         action: {
