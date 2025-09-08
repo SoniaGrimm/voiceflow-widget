@@ -301,15 +301,26 @@
                 console.log('Réponse:', data);
                 
                 loadingMessage.style.display = 'none';
+                
+                // Ajouter la carte de bienvenue visuelle
+                addWelcomeCard();
+                
                 messageInput.disabled = false;
                 sendButton.disabled = false;
                 messageInput.focus();
                 
+                // Traiter d'abord les messages de Voiceflow, puis l'agent ID
                 if (data && data.length > 0) {
-                    processVoiceflowResponse(data);
+                    // Filtrer le message "Salut ! Je test le flow" pour ne pas l'afficher
+                    const filteredData = data.filter(item => 
+                        !(item.type === 'text' && item.payload?.message?.includes('Salut ! Je test le flow'))
+                    );
+                    if (filteredData.length > 0) {
+                        processVoiceflowResponse(filteredData);
+                    }
                 }
 
-                // Après le premier message, envoyer l'ID de l'agent
+                // Après la carte de bienvenue, envoyer l'ID de l'agent
                 setTimeout(() => {
                     sendAgentID();
                 }, 2000);
