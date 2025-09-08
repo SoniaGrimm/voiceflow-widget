@@ -30,12 +30,9 @@
         }
 
         .chat-header {
-            background: #4a90e2;
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            background: #a05487;
+            height: 80px;
+            border-radius: 0;
         }
 
         .agent-avatar {
@@ -48,6 +45,20 @@
             justify-content: center;
             color: white;
             font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .agent-avatar-fallback {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #2c3e50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
         }
 
         .agent-info h1 {
@@ -91,7 +102,7 @@
         }
 
         .message.user .message-content {
-            background: #4a90e2;
+            background: #a05487;
             color: white;
             border-bottom-right-radius: 4px;
         }
@@ -110,7 +121,20 @@
         }
 
         .message.user .message-avatar {
-            background: #4a90e2;
+            background: #a05487;
+        }
+
+        .message-avatar-fallback {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #2c3e50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            flex-shrink: 0;
         }
 
         .chat-input-container {
@@ -141,7 +165,7 @@
             width: 45px;
             height: 45px;
             border: none;
-            background: #4a90e2;
+            background: #a05487;
             color: white;
             border-radius: 50%;
             cursor: pointer;
@@ -152,7 +176,7 @@
         }
 
         .send-button:hover {
-            background: #357abd;
+            background: #8a4574;
         }
 
         .send-button:disabled {
@@ -270,7 +294,7 @@
         function updateAgentInfo() {
             document.getElementById('agent-title').textContent = agentInfo.title;
             document.getElementById('agent-description').style.display = 'none'; // Masquer la description
-            document.getElementById('agent-avatar').textContent = agentInfo.avatar;
+            // L'avatar utilise maintenant l'image tao.jpg en CSS, pas besoin de texte
         }
 
         async function startSession() {
@@ -413,7 +437,7 @@
                 avatar.textContent = 'TAO';
             } else {
                 avatar.textContent = 'U';
-                avatar.style.background = '#4a90e2';
+                avatar.style.background = '#a05487';
             }
             
             const messageContent = document.createElement('div');
