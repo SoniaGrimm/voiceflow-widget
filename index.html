@@ -3,273 +3,522 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voiceflow Agent - TAO</title>
+    <title>Chat TAO - Agent Voiceflow</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
+            box-sizing: border-box;
         }
-        
-        #voiceflow-chat {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-        
-        /* Styles pour mode iframe dans Adalo */
-        .adalo-mode {
-            position: relative !important;
-            bottom: auto !important;
-            right: auto !important;
-            width: 100% !important;
-            height: 100vh !important;
-            background-color: white;
-        }
-        
-        /* Message de chargement */
-        #loading-message {
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
             height: 100vh;
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .chat-header {
+            background: #4a90e2;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .agent-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #2c3e50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .agent-info h1 {
             font-size: 18px;
+            margin-bottom: 2px;
+        }
+
+        .agent-info p {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.4;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.user .message-content {
+            background: #4a90e2;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #2c3e50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #4a90e2;
+        }
+
+        .chat-input-container {
+            padding: 15px 20px;
+            background: white;
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e1e8ed;
+            border-radius: 25px;
+            outline: none;
+            font-size: 16px;
+        }
+
+        .chat-input:focus {
+            border-color: #4a90e2;
+        }
+
+        .send-button {
+            width: 45px;
+            height: 45px;
+            border: none;
+            background: #4a90e2;
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .send-button:hover {
+            background: #357abd;
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px 16px;
+            background: white;
+            border-radius: 18px;
+            margin-bottom: 15px;
+            max-width: 70%;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #999;
+            animation: typing 1.4s ease-in-out infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .loading-message {
+            text-align: center;
+            padding: 20px;
             color: #666;
         }
-        
-        .agent-info {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #888;
-        }
-        
-        .hidden {
-            display: none !important;
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Message de chargement -->
-    <div id="loading-message">
-        <div>Chargement de l'agent...</div>
-        <div class="agent-info" id="agent-info"></div>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="agent-avatar" id="agent-avatar">TAO</div>
+            <div class="agent-info">
+                <h1 id="agent-title">Chargement...</h1>
+                <p id="agent-description">Connexion en cours...</p>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+            <div class="loading-message" id="loading-message">
+                Initialisation de votre agent...
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <form class="chat-input-form" id="chat-form">
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="message-input" 
+                    placeholder="Tapez votre message..."
+                    disabled
+                >
+                <button type="submit" class="send-button" id="send-button" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
     </div>
-    
-    <!-- Container pour le widget Voiceflow -->
-    <div id="voiceflow-chat"></div>
-    
+
     <script>
-        // Configuration de base avec vos vraies données (simplifiée)
-        const BASE_CONFIG = {
-            verify: { 
-                projectID: '68a6e2cc67f4932838663766'
+        // Configuration Voiceflow
+        const VOICEFLOW_CONFIG = {
+            projectID: '68a6e2cc67f4932838663766',
+            apiKey: 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP',
+            apiUrl: 'https://general-runtime.voiceflow.com'
+        };
+
+        // Mapping des agents
+        const AGENT_MAP = {
+            '1-3': {
+                title: 'Semaine 1 - Agent 3',
+                description: 'Violence - Sensibilisation',
+                avatar: '1-3'
             },
-            url: 'https://general-runtime.voiceflow.com',
-            versionID: 'production', // Utilise 'production' au lieu d'un ID spécifique
-            autostart: true,
-            allowDangerousHTML: true,
-            assistant: {
-                title: 'TAO Agent',
-                description: 'Votre assistant personnel'
+            '1-5': {
+                title: 'Semaine 1 - Agent 5',
+                description: 'Emotion - Colère',
+                avatar: '1-5'
+            },
+            '1-6': {
+                title: 'Semaine 1 - Agent 6',
+                description: 'Emotion - Tristesse',
+                avatar: '1-6'
             }
         };
 
-        // Token API pour les requêtes avancées
-        const API_TOKEN = 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP';
-        
-        // Fonction pour extraire les paramètres de l'URL
-        function getURLParameter(name) {
+        // Variables globales
+        let userID;
+        let currentAgent;
+        let agentInfo;
+        let sessionState = {};
+
+        // Éléments DOM
+        const messagesContainer = document.getElementById('chat-messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const chatForm = document.getElementById('chat-form');
+        const loadingMessage = document.getElementById('loading-message');
+
+        // Initialisation
+        function init() {
+            // Extraire les paramètres de l'URL
             const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
-        
-        // Fonction pour générer un ID utilisateur unique
-        function generateUserID() {
-            return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-        
-        // Fonction pour formater le titre de l'agent
-        function formatAgentTitle(agentID) {
-            if (!agentID) return 'TAO Agent';
+            currentAgent = urlParams.get('agent') || 'default';
+            userID = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
-            // Si format semaine-agent (ex: 1-3, 2-5)
-            if (agentID.match(/^\d+-\d+$/)) {
-                const parts = agentID.split('-');
-                return `Semaine ${parts[0]} - Agent ${parts[1]}`;
-            }
+            // Configuration de l'agent
+            agentInfo = AGENT_MAP[currentAgent] || {
+                title: currentAgent.charAt(0).toUpperCase() + currentAgent.slice(1),
+                description: 'Votre assistant personnel',
+                avatar: currentAgent
+            };
+
+            // Mise à jour de l'interface
+            updateAgentInfo();
             
-            // Sinon, capitaliser le nom
-            return agentID.replace(/_/g, ' ')
-                          .split(' ')
-                          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                          .join(' ');
+            // Démarrer la session
+            startSession();
         }
-        
-        // Récupérer les paramètres de l'URL
-        const agentParam = getURLParameter('agent'); // N'importe quel agent
-        const userID = getURLParameter('userID') || generateUserID();
-        const debug = getURLParameter('debug') === 'true';
-        const customTitle = getURLParameter('title');
-        
-        // Déterminer quel agent utiliser (générique)
-        let currentAgent = agentParam || 'default'; // Agent par défaut si non spécifié
-        
-        // Générer le titre automatiquement
-        let agentTitle = customTitle ? decodeURIComponent(customTitle) : formatAgentTitle(currentAgent);
-        
-        // Afficher les informations de l'agent en cours de chargement
-        document.getElementById('agent-info').textContent = `Agent: ${currentAgent}`;
-        
-        // Configuration finale avec les variables d'agent (générique)
-        let voiceflowConfig = { ...BASE_CONFIG };
-        voiceflowConfig.assistant.title = agentTitle;
-        
-        // Configuration de session avec variables universelles
-        voiceflowConfig.session = {
-            userID: userID,
-            variables: {
-                agentID: currentAgent, // Envoie directement la valeur de l'URL
-                userID: userID,
-                timestamp: Date.now()
-            }
-        };
-        
-        // Ajouter des variables supplémentaires si format semaine-agent
-        if (currentAgent.match(/^\d+-\d+$/)) {
-            const parts = currentAgent.split('-');
-            voiceflowConfig.session.variables.semaine = parts[0];
-            voiceflowConfig.session.variables.numeroAgent = parts[1];
+
+        function updateAgentInfo() {
+            document.getElementById('agent-title').textContent = agentInfo.title;
+            document.getElementById('agent-description').textContent = agentInfo.description;
+            document.getElementById('agent-avatar').textContent = agentInfo.avatar;
         }
-        
-        // Ajouter toutes les autres variables de l'URL
-        const urlParams = new URLSearchParams(window.location.search);
-        for (const [key, value] of urlParams) {
-            if (key !== 'agent' && key !== 'debug' && key !== 'title') {
-                voiceflowConfig.session.variables[key] = value;
-            }
-        }
-        
-        // Détecter si on est dans un iframe (Adalo)
-        const isInIframe = window.self !== window.top;
-        if (isInIframe) {
-            document.getElementById('voiceflow-chat').className = 'adalo-mode';
-            console.log('Mode Adalo détecté');
-        }
-        
-        // Fonction pour initialiser Voiceflow
-        function initializeVoiceflow() {
+
+        async function startSession() {
             try {
-                console.log('Initialisation du widget Voiceflow...', voiceflowConfig);
+                console.log('Démarrage de la session pour agent:', currentAgent);
                 
-                window.voiceflow.chat.load(voiceflowConfig).then(() => {
-                    console.log('✅ Widget Voiceflow chargé avec succès');
-                    console.log('📤 Variables envoyées:', voiceflowConfig.session.variables);
-                    document.getElementById('loading-message').classList.add('hidden');
-                    
-                    // Attendre un peu puis forcer le démarrage
-                    setTimeout(() => {
-                        console.log('🚀 Tentative de démarrage forcé...');
-                        
-                        // Méthode 1: Launch simple
-                        window.voiceflow.chat.interact({
-                            type: 'launch'
-                        }).then(() => {
-                            console.log('✅ Launch simple réussi');
-                        }).catch((error) => {
-                            console.error('❌ Erreur launch simple:', error);
-                            
-                            // Méthode 2: Avec variables
-                            window.voiceflow.chat.interact({
-                                type: 'launch',
-                                payload: voiceflowConfig.session.variables
-                            }).catch((error2) => {
-                                console.error('❌ Erreur launch avec variables:', error2);
-                                
-                                // Méthode 3: Message de démarrage
-                                window.voiceflow.chat.interact({
-                                    type: 'text',
-                                    payload: { message: 'hello' }
-                                });
-                            });
-                        });
-                    }, 2000); // Attendre 2 secondes
-                    
-                }).catch((error) => {
-                    console.error('Erreur lors du chargement du widget:', error);
-                    document.getElementById('loading-message').innerHTML = 
-                        '<div>Erreur de chargement</div><div class="agent-info">Veuillez rafraîchir la page</div>';
+                // Initialiser la session avec Voiceflow
+                const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${VOICEFLOW_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json',
+                        'versionID': 'production'
+                    },
+                    body: JSON.stringify({
+                        action: {
+                            type: 'launch',
+                            payload: {
+                                agentID: currentAgent,
+                                userID: userID
+                            }
+                        },
+                        config: {
+                            tts: false,
+                            stripSSML: true
+                        }
+                    })
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Session démarrée:', data);
+                
+                // Masquer le message de chargement
+                loadingMessage.style.display = 'none';
+                
+                // Activer l'interface
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
+                
+                // Traiter la réponse initiale
+                if (data && data.length > 0) {
+                    processVoiceflowResponse(data);
+                } else {
+                    // Message de bienvenue par défaut si pas de réponse
+                    addMessage('bot', `Bonjour ! Je suis ${agentInfo.title}. Comment puis-je vous aider ?`);
+                }
+                
             } catch (error) {
-                console.error('Erreur lors de l\'initialisation:', error);
-                document.getElementById('loading-message').innerHTML = 
-                    '<div>Erreur d\'initialisation</div><div class="agent-info">Veuillez rafraîchir la page</div>';
+                console.error('Erreur lors du démarrage de la session:', error);
+                loadingMessage.textContent = 'Erreur de connexion. Veuillez rafraîchir la page.';
+                loadingMessage.style.color = 'red';
             }
         }
-        
-        // Charger le script Voiceflow
-        (function(d, t) {
-            var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+
+        async function sendMessage(message) {
+            if (!message.trim()) return;
+
+            // Ajouter le message de l'utilisateur
+            addMessage('user', message);
             
-            v.onload = function() {
-                console.log('Script Voiceflow chargé');
-                initializeVoiceflow();
-            };
-            
-            v.onerror = function() {
-                console.error('Erreur lors du chargement du script Voiceflow');
-                document.getElementById('loading-message').innerHTML = 
-                    '<div>Impossible de charger l\'agent</div><div class="agent-info">Vérifiez votre connexion</div>';
-            };
-            
-            v.src = "https://cdn.voiceflow.com/widget/bundle.mjs";
-            v.type = "text/javascript";
-            s.parentNode.insertBefore(v, s);
-        })(document, 'script');
-        
-        // Gestion des messages pour Adalo
-        if (isInIframe) {
-            window.addEventListener('message', function(event) {
-                console.log('Message reçu d\'Adalo:', event.data);
-                
-                // Traiter les commandes d'Adalo
-                if (event.data && event.data.action) {
-                    switch(event.data.action) {
-                        case 'changeAgent':
-                            if (event.data.agentID) {
-                                // Recharger avec le nouvel agent
-                                window.location.search = `?agent=${event.data.agentID}`;
-                            }
-                            break;
-                        case 'reset':
-                            if (window.voiceflow) {
-                                window.voiceflow.chat.reset();
-                            }
-                            break;
-                    }
+            // Désactiver l'interface pendant l'envoi
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+            showTypingIndicator();
+
+            try {
+                const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${VOICEFLOW_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json',
+                        'versionID': 'production'
+                    },
+                    body: JSON.stringify({
+                        action: {
+                            type: 'text',
+                            payload: message
+                        },
+                        config: {
+                            tts: false,
+                            stripSSML: true
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            });
-            
-            // Notifier Adalo que le widget est prêt
-            window.parent.postMessage({
-                type: 'voiceflow-ready',
-                agent: currentAgent,
-                timestamp: Date.now()
-            }, '*');
+
+                const data = await response.json();
+                hideTypingIndicator();
+                
+                if (data && data.length > 0) {
+                    processVoiceflowResponse(data);
+                } else {
+                    addMessage('bot', 'Je n\'ai pas compris. Pouvez-vous reformuler ?');
+                }
+
+            } catch (error) {
+                hideTypingIndicator();
+                console.error('Erreur lors de l\'envoi du message:', error);
+                addMessage('bot', 'Désolé, je rencontre un problème technique. Veuillez réessayer.');
+            }
+
+            // Réactiver l'interface
+            messageInput.disabled = false;
+            sendButton.disabled = false;
+            messageInput.focus();
         }
-        
-        // Log des paramètres pour débogage (toujours actif pour les tests)
-        console.log('🔍 Configuration Générique:', {
-            urlComplete: window.location.href,
-            agentParam: agentParam,
-            currentAgent: currentAgent,
-            agentTitle: agentTitle,
-            userID: userID,
-            isInIframe: isInIframe,
-            sessionVariables: voiceflowConfig.session.variables,
-            toutesLesVariablesURL: Object.fromEntries(urlParams)
+
+        function processVoiceflowResponse(responseArray) {
+            responseArray.forEach(item => {
+                if (item.type === 'text' && item.payload?.message) {
+                    addMessage('bot', item.payload.message);
+                }
+                // Autres types de réponses peuvent être ajoutés ici
+            });
+        }
+
+        function addMessage(sender, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = sender === 'bot' ? agentInfo.avatar : 'U';
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = content;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageContent);
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot';
+            typingDiv.id = 'typing-indicator';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = agentInfo.avatar;
+            
+            const typingContent = document.createElement('div');
+            typingContent.className = 'typing-indicator';
+            typingContent.style.display = 'block';
+            typingContent.innerHTML = `
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            
+            typingDiv.appendChild(avatar);
+            typingDiv.appendChild(typingContent);
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Gestionnaires d'événements
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (message) {
+                sendMessage(message);
+                messageInput.value = '';
+            }
+        });
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Démarrer l'application
+        init();
+
+        // Log pour debug
+        console.log('Chat TAO initialisé', {
+            agent: currentAgent,
+            agentInfo: agentInfo,
+            userID: userID
         });
     </script>
 </body>
