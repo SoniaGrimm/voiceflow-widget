@@ -410,6 +410,8 @@
             addMessage('user', message);
             messageInput.disabled = true;
             sendButton.disabled = true;
+            
+            displayLog(`Envoi message utilisateur: "${message}"`, 'info');
 
             try {
                 const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
@@ -427,14 +429,22 @@
                     })
                 });
 
+                displayLog(`Message utilisateur - Status: ${response.status}`, response.ok ? 'info' : 'error');
+
                 if (response.ok) {
                     const data = await response.json();
+                    displayLog(`Réponse reçue: ${JSON.stringify(data)}`, 'info');
                     if (data && data.length > 0) {
                         processVoiceflowResponse(data);
+                    } else {
+                        displayLog('Aucune réponse de Voiceflow pour message utilisateur', 'error');
                     }
+                } else {
+                    displayLog(`Erreur HTTP: ${response.status} ${response.statusText}`, 'error');
                 }
 
             } catch (error) {
+                displayLog(`Erreur envoi message: ${error.message}`, 'error');
                 console.error('Erreur message:', error);
                 addMessage('bot', 'Désolé, problème technique.');
             }
