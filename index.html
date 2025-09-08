@@ -263,10 +263,36 @@
             }
         };
 
-        // Variables globales
-        let userID;
-        let currentAgent;
-        let agentInfo;
+        // Fonction pour afficher les logs visuellement
+        function displayLog(message, type = 'info') {
+            const logDiv = document.createElement('div');
+            logDiv.style.cssText = `
+                padding: 5px; 
+                margin: 2px; 
+                font-size: 11px; 
+                border-radius: 3px;
+                background: ${type === 'error' ? '#ffebee' : '#e3f2fd'};
+                color: ${type === 'error' ? '#c62828' : '#1565c0'};
+                border: 1px solid ${type === 'error' ? '#ffcdd2' : '#bbdefb'};
+            `;
+            logDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            messagesContainer.appendChild(logDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Remplacer console.log par displayLog
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        
+        console.log = function(...args) {
+            displayLog(args.join(' '), 'info');
+            originalConsoleLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            displayLog(args.join(' '), 'error');
+            originalConsoleError.apply(console, args);
+        };
 
         // Éléments DOM
         const messagesContainer = document.getElementById('chat-messages');
