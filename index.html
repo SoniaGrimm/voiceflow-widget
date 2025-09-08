@@ -333,10 +333,10 @@
                     processVoiceflowResponse(data);
                 }
 
-                // Après le premier message, envoyer l'ID de l'agent
+                // Réduire le délai d'envoi de l'agent ID
                 setTimeout(() => {
                     sendAgentID();
-                }, 2000);
+                }, 500);
                 
             } catch (error) {
                 console.error('Erreur:', error);
