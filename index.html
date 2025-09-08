@@ -189,36 +189,19 @@
     </div>
 
     <script>
-        // Configuration Voiceflow
+        // Configuration Voiceflow avec proxy CORS
         const VOICEFLOW_CONFIG = {
             projectID: '68a6e2cc67f4932838663766',
+            versionID: '68a6e2cc67f49328386b3767',
             apiKey: 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP',
-            apiUrl: 'https://general-runtime.voiceflow.com'
-        };
-
-        // Mapping des agents
-        const AGENT_MAP = {
-            '1-3': {
-                title: 'Semaine 1 - Agent 3',
-                description: 'Violence - Sensibilisation',
-                avatar: '1-3'
-            },
-            '1-5': {
-                title: 'Semaine 1 - Agent 5',
-                description: 'Emotion - Colère',
-                avatar: '1-5'
-            },
-            '1-6': {
-                title: 'Semaine 1 - Agent 6',
-                description: 'Emotion - Tristesse',
-                avatar: '1-6'
-            }
+            baseUrl: 'https://general-runtime.voiceflow.com',
+            // Utilisation d'un proxy CORS stable
+            proxyUrl: 'https://cors-proxy.htmldriven.com/?url='
         };
 
         // Variables globales
         let userID;
         let currentAgent;
-        let agentInfo;
 
         // Éléments DOM
         const messagesContainer = document.getElementById('chat-messages');
@@ -227,18 +210,33 @@
         const chatForm = document.getElementById('chat-form');
         const loadingMessage = document.getElementById('loading-message');
 
+        // Appel API via proxy CORS
+        async function callVoiceflowAPI(action) {
+            const url = `${VOICEFLOW_CONFIG.proxyUrl}${encodeURIComponent(`${VOICEFLOW_CONFIG.baseUrl}/state/user/${userID}/interact`)}`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': VOICEFLOW_CONFIG.apiKey,
+                    'Content-Type': 'application/json',
+                    'versionID': VOICEFLOW_CONFIG.versionID
+                },
+                body: JSON.stringify({ action })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            return await response.json();
+        }
+
         // Initialisation
         function init() {
             const urlParams = new URLSearchParams(window.location.search);
             currentAgent = urlParams.get('agent') || '1-3';
             userID = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
-            agentInfo = AGENT_MAP[currentAgent] || {
-                title: currentAgent.charAt(0).toUpperCase() + currentAgent.slice(1),
-                description: 'Votre assistant personnel',
-                avatar: currentAgent
-            };
-
             console.log('Initialisation chat TAO pour agent:', currentAgent);
             startSession();
         }
@@ -247,27 +245,10 @@
             try {
                 console.log('Démarrage pour agent:', currentAgent);
                 
-                const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': VOICEFLOW_CONFIG.apiKey,
-                        'Content-Type': 'application/json',
-                        'versionID': 'development'
-                    },
-                    body: JSON.stringify({
-                        action: {
-                            type: 'launch'
-                        }
-                    })
+                const data = await callVoiceflowAPI({
+                    type: 'launch'
                 });
 
-                console.log('Status:', response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
                 console.log('Réponse launch:', data);
                 
                 loadingMessage.style.display = 'none';
@@ -279,45 +260,82 @@
                     processVoiceflowResponse(data);
                 }
 
-                // Envoyer l'agent ID immédiatement
-                sendAgentID();
+                // Envoyer l'agent ID
+                setTimeout(async () => {
+                    try {
+                        console.log('Envoi agent ID:', currentAgent);
+                        const agentData = await callVoiceflowAPI({
+                            type: 'text',
+                            payload: currentAgent
+                        });
+                        console.log('Agent ID envoyé:', agentData);
+                        processVoiceflowResponse(agentData);
+                    } catch (error) {
+                        console.error('Erreur envoi agent ID:', error);
+                    }
+                }, 1000);
                 
             } catch (error) {
                 console.error('Erreur:', error);
-                loadingMessage.textContent = 'Erreur de connexion. Veuillez rafraîchir la page.';
-                loadingMessage.style.color = 'red';
+                loadingMessage.textContent = 'Erreur de connexion. Tentative avec méthode alternative...';
+                loadingMessage.style.color = 'orange';
+                
+                // Fallback avec un autre proxy
+                setTimeout(() => tryAlternativeProxy(), 2000);
             }
         }
 
-        async function sendAgentID() {
+        async function tryAlternativeProxy() {
             try {
-                console.log('Envoi agent ID:', currentAgent);
+                console.log('Tentative avec proxy alternatif...');
                 
-                const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
+                // Utiliser un proxy différent
+                const altUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`${VOICEFLOW_CONFIG.baseUrl}/state/user/${userID}/interact`)}`;
+                
+                const response = await fetch(altUrl, {
                     method: 'POST',
                     headers: {
                         'Authorization': VOICEFLOW_CONFIG.apiKey,
                         'Content-Type': 'application/json',
-                        'versionID': 'development'
+                        'versionID': VOICEFLOW_CONFIG.versionID
                     },
                     body: JSON.stringify({
-                        action: {
-                            type: 'text',
-                            payload: currentAgent
-                        }
+                        action: { type: 'launch' }
                     })
                 });
 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('Agent ID envoyé, réponse:', data);
-                    if (data && data.length > 0) {
-                        processVoiceflowResponse(data);
-                    }
+                    loadingMessage.style.display = 'none';
+                    messageInput.disabled = false;
+                    sendButton.disabled = false;
+                    messageInput.focus();
+                    
+                    processVoiceflowResponse(data);
+                    
+                    // Mettre à jour la config pour utiliser ce proxy
+                    VOICEFLOW_CONFIG.proxyUrl = 'https://api.allorigins.win/raw?url=';
+                    
+                    // Envoyer l'agent ID
+                    setTimeout(async () => {
+                        try {
+                            const agentData = await callVoiceflowAPI({
+                                type: 'text',
+                                payload: currentAgent
+                            });
+                            processVoiceflowResponse(agentData);
+                        } catch (error) {
+                            console.error('Erreur envoi agent ID:', error);
+                        }
+                    }, 1000);
+                } else {
+                    throw new Error('Proxy alternatif échoué');
                 }
                 
             } catch (error) {
-                console.error('Erreur envoi agent ID:', error);
+                console.error('Erreur proxy alternatif:', error);
+                loadingMessage.textContent = 'Impossible de se connecter à Voiceflow depuis Adalo. CORS bloqué.';
+                loadingMessage.style.color = 'red';
             }
         }
 
@@ -329,31 +347,18 @@
             sendButton.disabled = true;
 
             try {
-                const response = await fetch(`${VOICEFLOW_CONFIG.apiUrl}/state/user/${userID}/interact`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': VOICEFLOW_CONFIG.apiKey,
-                        'Content-Type': 'application/json',
-                        'versionID': 'development'
-                    },
-                    body: JSON.stringify({
-                        action: {
-                            type: 'text',
-                            payload: message
-                        }
-                    })
+                const data = await callVoiceflowAPI({
+                    type: 'text',
+                    payload: message
                 });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.length > 0) {
-                        processVoiceflowResponse(data);
-                    }
+                
+                if (data && data.length > 0) {
+                    processVoiceflowResponse(data);
                 }
 
             } catch (error) {
                 console.error('Erreur message:', error);
-                addMessage('bot', 'Désolé, problème technique.');
+                addMessage('bot', 'Problème de connexion. Réessayez.');
             }
 
             messageInput.disabled = false;
@@ -362,8 +367,12 @@
         }
 
         function processVoiceflowResponse(responseArray) {
+            if (!responseArray || !Array.isArray(responseArray)) return;
+            
             responseArray.forEach(item => {
                 if (item.type === 'text' && item.payload?.message) {
+                    addMessage('bot', item.payload.message);
+                } else if (item.type === 'speak' && item.payload?.message) {
                     addMessage('bot', item.payload.message);
                 }
             });
