@@ -237,11 +237,13 @@
     </div>
 
     <script>
-        // Configuration Voiceflow
+        // Configuration Voiceflow avec fallback
         const VOICEFLOW_CONFIG = {
             projectID: '68a6e2cc67f4932838663766',
             apiKey: 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP',
-            apiUrl: 'https://general-runtime.voiceflow.com'
+            apiUrl: isAdaloPreview 
+                ? 'https://cors-anywhere.herokuapp.com/https://general-runtime.voiceflow.com'
+                : 'https://general-runtime.voiceflow.com'
         };
 
         // Mapping des agents
