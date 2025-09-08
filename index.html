@@ -62,22 +62,18 @@
     <div id="voiceflow-chat"></div>
     
     <script>
-        // Configuration de base avec vos vraies données
+        // Configuration de base avec vos vraies données (simplifiée)
         const BASE_CONFIG = {
             verify: { 
                 projectID: '68a6e2cc67f4932838663766'
             },
             url: 'https://general-runtime.voiceflow.com',
-            versionID: '68a6e2cc67f4932838663767',
-            voice: {
-                url: 'https://runtime-api.voiceflow.com'
-            },
+            versionID: 'production', // Utilise 'production' au lieu d'un ID spécifique
             autostart: true,
             allowDangerousHTML: true,
             assistant: {
                 title: 'TAO Agent',
-                description: 'Votre assistant personnel',
-                image: 'https://via.placeholder.com/150x150/4f46e5/ffffff?text=TAO'
+                description: 'Votre assistant personnel'
             }
         };
 
@@ -173,29 +169,33 @@
                     console.log('📤 Variables envoyées:', voiceflowConfig.session.variables);
                     document.getElementById('loading-message').classList.add('hidden');
                     
-                    // Forcer le démarrage de la conversation
-                    console.log('🚀 Tentative de démarrage de la conversation...');
-                    
-                    // Première tentative : launch
-                    window.voiceflow.chat.interact({
-                        type: 'launch',
-                        payload: voiceflowConfig.session.variables
-                    }).then(() => {
-                        console.log('✅ Launch réussi');
-                    }).catch((error) => {
-                        console.error('❌ Erreur launch:', error);
+                    // Attendre un peu puis forcer le démarrage
+                    setTimeout(() => {
+                        console.log('🚀 Tentative de démarrage forcé...');
                         
-                        // Deuxième tentative : text
-                        setTimeout(() => {
-                            console.log('🔄 Tentative avec message text...');
+                        // Méthode 1: Launch simple
+                        window.voiceflow.chat.interact({
+                            type: 'launch'
+                        }).then(() => {
+                            console.log('✅ Launch simple réussi');
+                        }).catch((error) => {
+                            console.error('❌ Erreur launch simple:', error);
+                            
+                            // Méthode 2: Avec variables
                             window.voiceflow.chat.interact({
-                                type: 'text',
-                                payload: { message: 'start' }
+                                type: 'launch',
+                                payload: voiceflowConfig.session.variables
+                            }).catch((error2) => {
+                                console.error('❌ Erreur launch avec variables:', error2);
+                                
+                                // Méthode 3: Message de démarrage
+                                window.voiceflow.chat.interact({
+                                    type: 'text',
+                                    payload: { message: 'hello' }
+                                });
                             });
-                        }, 500);
-                    });
-                    
-                    console.log('📋 Variables transmises au lancement:', voiceflowConfig.session.variables);
+                        });
+                    }, 2000); // Attendre 2 secondes
                     
                 }).catch((error) => {
                     console.error('Erreur lors du chargement du widget:', error);
