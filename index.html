@@ -1,126 +1,121 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat TAO - Voiceflow</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TAO (Voiceflow)</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f8f9fa;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 15px;
-    }
-    .msg {
-      margin: 8px 0;
-      padding: 10px 14px;
-      border-radius: 12px;
-      max-width: 70%;
-    }
-    .bot {
-      background: #eee;
-      align-self: flex-start;
-    }
-    .user {
-      background: #a05487;
-      color: #fff;
-      align-self: flex-end;
-    }
-    #input-area {
-      display: flex;
-      border-top: 1px solid #ccc;
-    }
-    #input {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      outline: none;
-      font-size: 16px;
-    }
-    #send {
-      background: #a05487;
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      cursor: pointer;
-    }
-    #send:hover {
-      background: #8a4574;
-    }
+    :root { --violet:#a05487; --bg:#f7f7f8; --txt:#222; }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--txt)}
+    .wrap{display:flex;flex-direction:column;height:100%}
+    header{background:var(--violet);color:#fff;padding:10px 14px;font-weight:600}
+    #log{flex:1;overflow:auto;padding:16px}
+    .msg{max-width:720px;margin:8px auto;padding:12px 14px;border-radius:10px;line-height:1.4;background:#fff;border:1px solid #e6e6e9}
+    .me{background:var(--violet);border-color:var(--violet);color:#fff}
+    .sys{background:#fff8e1;border-color:#f1e2a3}
+    footer{padding:10px;border-top:1px solid #e6e6e9;background:#fff}
+    form{display:flex;gap:10px;max-width:720px;margin:0 auto}
+    input[type=text]{flex:1;padding:12px;border:1px solid #d7d7dc;border-radius:10px;font-size:16px}
+    button{padding:12px 16px;border:none;border-radius:10px;background:var(--violet);color:#fff;font-weight:600;cursor:pointer}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .hint{max-width:720px;margin:0 auto 6px auto;color:#666;font-size:13px}
+    .badge{display:inline-block;padding:.15rem .5rem;border-radius:999px;background:#eee;font-size:12px}
+    .err{background:#ffeaea;border-color:#ffb7b7;color:#9d2626}
+    .muted{opacity:.7}
   </style>
 </head>
 <body>
-  <div id="messages"></div>
-  <div id="input-area">
-    <input id="input" type="text" placeholder="Écris ton message..." />
-    <button id="send">Envoyer</button>
+  <div class="wrap">
+    <header>TAO – Demo DM API</header>
+
+    <div id="log" aria-live="polite">
+      <div class="msg sys">👋 Bonjour, je suis TAO. (Chargement…)</div>
+    </div>
+
+    <div class="hint">
+      Paramètres URL facultatifs : <span class="badge">?agent=1-3</span> et <span class="badge">&prenom=Sacha</span>
+    </div>
+
+    <footer>
+      <form id="f">
+        <input id="t" type="text" placeholder="Écris ton message…" autocomplete="off" />
+        <button id="send" type="submit">Envoyer</button>
+      </form>
+    </footer>
   </div>
 
   <script>
-    const API_KEY = "Bearer VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP";
-    const USER_ID = "test-user"; // tu peux mettre un ID dynamique
-    const RUNTIME_URL = `https://general-runtime.voiceflow.com/state/user/${USER_ID}/interact`;
+    // ================== CONFIG ==================
+    const VF = {
+      base: 'https://general-runtime.voiceflow.com',
+      apiKey: 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP',   // (tu as demandé qu’on l’utilise tel quel)
+      versionID: 'production',                                    // ou l’UUID exact si tu préfères
+      projectID: '68a6e2cc6749328386b3766'
+    };
 
-    const messagesDiv = document.getElementById("messages");
-    const input = document.getElementById("input");
-    const sendBtn = document.getElementById("send");
+    // ========= UI helpers =========
+    const $log = document.getElementById('log');
+    const $form = document.getElementById('f');
+    const $input = document.getElementById('t');
+    const $btn = document.getElementById('send');
 
-    function addMessage(text, sender) {
-      const div = document.createElement("div");
-      div.className = "msg " + sender;
-      div.textContent = text;
-      messagesDiv.appendChild(div);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
+    const add = (html, cls='') => {
+      const d = document.createElement('div');
+      d.className = `msg ${cls}`;
+      d.innerHTML = html;
+      $log.appendChild(d);
+      $log.scrollTop = $log.scrollHeight;
+      return d;
+    };
 
-    async function sendMessage() {
-      const text = input.value.trim();
-      if (!text) return;
-      addMessage(text, "user");
-      input.value = "";
+    const addBot = (text) => add(text);
+    const addUser = (text) => add(text, 'me');
+    const addSys  = (text) => add(text, 'sys');
+    const addErr  = (text) => add(text, 'err');
 
-      try {
-        const res = await fetch(RUNTIME_URL, {
-          method: "POST",
-          headers: {
-            "Authorization": API_KEY,
-            "Content-Type": "application/json",
-            "versionID": "production"
-          },
-          body: JSON.stringify({
-            action: { type: "text", payload: text }
-          })
-        });
+    // ========= VF client =========
+    const userID = `web_${Math.random().toString(36).slice(2)}`;
 
-        const data = await res.json();
+    // récupère éventuels paramètres
+    const params  = new URLSearchParams(location.search);
+    const agentID = params.get('agent') || '1-3';
+    const prenom  = params.get('prenom') || 'ami';
 
-        // Voiceflow renvoie une liste "trace"
-        data.forEach(trace => {
-          if (trace.type === "speak" && trace.payload?.message) {
-            addMessage(trace.payload.message, "bot");
-          }
-        });
+    async function interact(payload) {
+      const url = `${VF.base}/state/user/${encodeURIComponent(userID)}/interact`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${VF.apiKey}`,
+          'Content-Type': 'application/json',
+          'versionID': VF.versionID
+        },
+        body: JSON.stringify(payload)
+      });
 
-      } catch (err) {
-        console.error(err);
-        addMessage("⚠️ Erreur de connexion à Voiceflow", "bot");
+      if (!res.ok) {
+        const txt = await res.text().catch(()=>'');
+        throw new Error(`${res.status} ${res.statusText} – ${txt}`);
       }
+      return res.json();
     }
 
-    sendBtn.addEventListener("click", sendMessage);
-    input.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") sendMessage();
-    });
-
-    // Message de bienvenue
-    addMessage("👋 Bonjour, je suis TAO. Pose-moi une question !", "bot");
-  </script>
-</body>
-</html>
+    // rend les traces retournées par VF
+    function renderTraces(traces) {
+      traces.forEach(t => {
+        switch (t.type) {
+          case 'text':
+            if (t.payload?.message) addBot(t.payload.message);
+            break;
+          case 'speak':
+            if (t.payload?.message) addBot(t.payload.message);
+            break;
+          case 'choice':
+            if (t.payload?.choices?.length) {
+              const opts = t.payload.choices.map(c => `• ${c.name || c.value}`).join('<br/>');
+              addBot(opts);
+            }
+            break;
+          case 'end':
+            addSys('🟣
