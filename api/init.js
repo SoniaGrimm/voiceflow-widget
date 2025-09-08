@@ -1,4 +1,4 @@
-// api/init.js - Lit l'agent_id depuis l'URL
+// api/init.js - Filtre le message générique
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -9,14 +9,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Lire l'agent_id depuis l'URL (?agent=1-3) ou depuis le body
     const agent_id = req.query.agent || req.body?.agent_id;
     const user_id = req.query.user || req.body?.user_id;
     
     if (!agent_id) {
       return res.status(400).json({ 
         success: false,
-        error: 'agent_id est requis dans l\'URL (?agent=1-3) ou dans le body' 
+        error: 'agent_id est requis dans l\'URL (?agent=1-3)' 
       });
     }
 
@@ -25,33 +24,10 @@ export default async function handler(req, res) {
     
     console.log(`Initialisation agent: ${agent_id} pour user: ${sessionUserId}`);
 
-    // ÉTAPE 1: Initialiser la session silencieusement
-    const initPayload = {
-      session: {
-        userID: sessionUserId,
-        variables: {
-          agentID: agent_id
-        }
-      }
-    };
-
-    await fetch(
-      `https://general-runtime.voiceflow.com/state/user/${sessionUserId}/interact`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': VOICEFLOW_API_KEY,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(initPayload)
-      }
-    );
-
-    // ÉTAPE 2: Déclencher le flow spécifique
-    const triggerPayload = {
-      action: {
-        type: 'text',
-        payload: 'je teste le flow'
+    // Utiliser LAUNCH avec la variable agentID pour déclencher tout le flow
+    const launchPayload = {
+      action: { 
+        type: 'launch' 
       },
       config: {
         tts: false,
@@ -62,7 +38,7 @@ export default async function handler(req, res) {
       session: {
         userID: sessionUserId,
         variables: {
-          agentID: agent_id
+          agentID: agent_id  // La variable que votre flow utilise
         }
       }
     };
@@ -75,7 +51,7 @@ export default async function handler(req, res) {
           'Authorization': VOICEFLOW_API_KEY,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(triggerPayload)
+        body: JSON.stringify(launchPayload)
       }
     );
 
@@ -84,23 +60,46 @@ export default async function handler(req, res) {
     }
 
     const result = await response.json();
+    console.log('Réponse complète Voiceflow:', result);
 
-    // Extraire la réponse de l'agent spécifique
-    let welcomeMessage = '';
+    // Extraire TOUTES les réponses texte
+    let allMessages = [];
     if (result && Array.isArray(result)) {
       for (const item of result) {
         if (item.type === 'text' && item.payload && item.payload.message) {
-          welcomeMessage += item.payload.message + ' ';
+          allMessages.push(item.payload.message.trim());
         }
       }
     }
+
+    console.log('Tous les messages reçus:', allMessages);
+
+    // FILTRER : Ignorer le message générique, garder la réponse spécifique
+    let specificMessage = '';
+    const genericMessage = "Salut"; // Début du message générique à ignorer
+    
+    for (const message of allMessages) {
+      // Ignorer les messages qui commencent par "Salut" (message générique)
+      if (!message.startsWith(genericMessage)) {
+        specificMessage = message;
+        break; // Prendre le premier message spécifique
+      }
+    }
+
+    // Si pas de message spécifique trouvé, prendre le dernier (après le générique)
+    if (!specificMessage && allMessages.length > 1) {
+      specificMessage = allMessages[allMessages.length - 1];
+    }
+
+    const welcomeMessage = specificMessage || `Agent ${agent_id} activé`;
 
     return res.status(200).json({
       success: true,
       user_id: sessionUserId,
       agent_id: agent_id,
       agent_name: formatAgentName(agent_id),
-      welcome_message: welcomeMessage.trim() || `Agent ${agent_id} activé`,
+      welcome_message: welcomeMessage,
+      debug_all_messages: allMessages, // Pour debug
       timestamp: new Date().toISOString()
     });
 
