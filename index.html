@@ -197,6 +197,7 @@
         // Variables globales
         let userID;
         let currentAgent;
+        let agentIDSent = false; // Variable pour tracker si l'agent ID a été envoyé
 
         // Éléments DOM
         const messagesContainer = document.getElementById('chat-messages');
@@ -236,7 +237,7 @@
             startSession();
         }
 
-        // Version optimisée pour Adalo
+        // Version simplifiée qui ne force pas l'envoi automatique de l'agent ID
         async function startSession() {
             try {
                 console.log('Démarrage pour agent:', currentAgent);
@@ -255,46 +256,6 @@
                 if (data && data.length > 0) {
                     processVoiceflowResponse(data);
                 }
-
-                // Envoi immédiat de l'agent ID après le launch (sans délai)
-                try {
-                    console.log('Envoi immédiat agent ID:', currentAgent);
-                    const agentData = await callVoiceflowAPI({
-                        type: 'text',
-                        payload: currentAgent
-                    });
-                    console.log('Agent ID envoyé, réponse:', agentData);
-                    processVoiceflowResponse(agentData);
-                } catch (error) {
-                    console.error('Erreur envoi agent ID:', error);
-                    // Mécanisme de retry après 2 secondes
-                    setTimeout(async () => {
-                        try {
-                            console.log('Retry envoi agent ID:', currentAgent);
-                            const retryData = await callVoiceflowAPI({
-                                type: 'text',
-                                payload: currentAgent
-                            });
-                            console.log('Retry réussi:', retryData);
-                            processVoiceflowResponse(retryData);
-                        } catch (retryError) {
-                            console.error('Retry échoué:', retryError);
-                            // Dernière tentative avec un message utilisateur visible
-                            addMessage('user', currentAgent);
-                            setTimeout(async () => {
-                                try {
-                                    const finalTry = await callVoiceflowAPI({
-                                        type: 'text',
-                                        payload: currentAgent
-                                    });
-                                    processVoiceflowResponse(finalTry);
-                                } catch (finalError) {
-                                    console.error('Tentative finale échouée:', finalError);
-                                }
-                            }, 1000);
-                        }
-                    }, 2000);
-                }
                 
             } catch (error) {
                 console.error('Erreur:', error);
@@ -303,9 +264,49 @@
             }
         }
 
+        // Version modifiée qui envoie l'agent ID au premier message utilisateur
         async function sendMessage(message) {
             if (!message.trim()) return;
             
+            // Si l'agent ID n'a pas encore été envoyé, on l'envoie d'abord
+            if (!agentIDSent) {
+                agentIDSent = true;
+                
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                
+                try {
+                    console.log('Envoi agent ID via interaction utilisateur:', currentAgent);
+                    
+                    // Envoyer d'abord l'agent ID
+                    const agentData = await callVoiceflowAPI({
+                        type: 'text',
+                        payload: currentAgent
+                    });
+                    console.log('Agent ID envoyé, réponse:', agentData);
+                    processVoiceflowResponse(agentData);
+                    
+                    // Puis envoyer le message de l'utilisateur
+                    const userMessage = await callVoiceflowAPI({
+                        type: 'text',
+                        payload: message
+                    });
+                    
+                    addMessage('user', message);
+                    processVoiceflowResponse(userMessage);
+                    
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    addMessage('bot', 'Erreur de connexion.');
+                }
+                
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
+                return;
+            }
+            
+            // Fonctionnement normal pour les messages suivants
             addMessage('user', message);
             messageInput.disabled = true;
             sendButton.disabled = true;
