@@ -1,6 +1,5 @@
-// api/init.js - COPIEZ CE CODE EXACT
+// api/init.js - Version qui bypasse le message générique
 export default async function handler(req, res) {
-  // Configuration CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -23,28 +22,20 @@ export default async function handler(req, res) {
       });
     }
 
-    // Configuration Voiceflow
     const VOICEFLOW_API_KEY = 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP';
-    
-    // Générer un user_id unique
     const sessionUserId = user_id || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Initialiser la session Voiceflow avec l'agent_id - CORRECTION ICI
+    // ÉTAPE 1: Initialiser la session silencieusement (sans launch)
     const initPayload = {
-      action: { 
-        type: 'launch' 
-      },
       session: {
         userID: sessionUserId,
         variables: {
-          agentID: agent_id  // ← CORRIGÉ : agentID au lieu de agent_id
+          agentID: agent_id
         }
       }
     };
 
-    console.log('Initialisation session pour agent:', agent_id);
-
-    const response = await fetch(
+    const initResponse = await fetch(
       `https://general-runtime.voiceflow.com/state/user/${sessionUserId}/interact`,
       {
         method: 'POST',
@@ -56,6 +47,38 @@ export default async function handler(req, res) {
       }
     );
 
+    // ÉTAPE 2: Envoyer un message qui déclenche les conditions directement
+    const triggerPayload = {
+      action: {
+        type: 'text',
+        payload: 'je teste le flow' // Message qui déclenche vos conditions
+      },
+      config: {
+        tts: false,
+        stripSSML: true,
+        stopAll: true,
+        excludeTypes: ['block', 'debug', 'flow']
+      },
+      session: {
+        userID: sessionUserId,
+        variables: {
+          agentID: agent_id
+        }
+      }
+    };
+
+    const response = await fetch(
+      `https://general-runtime.voiceflow.com/state/user/${sessionUserId}/interact`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': VOICEFLOW_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(triggerPayload)
+      }
+    );
+
     if (!response.ok) {
       throw new Error(`Erreur initialisation: ${response.status}`);
     }
@@ -63,7 +86,7 @@ export default async function handler(req, res) {
     const result = await response.json();
     console.log('Session initialisée:', result);
 
-    // Extraire le message d'accueil s'il y en a un
+    // Extraire le vrai message de l'agent spécifique
     let welcomeMessage = '';
     if (result && Array.isArray(result)) {
       for (const item of result) {
@@ -78,7 +101,7 @@ export default async function handler(req, res) {
       user_id: sessionUserId,
       agent_id: agent_id,
       agent_name: formatAgentName(agent_id),
-      welcome_message: welcomeMessage.trim() || `Bonjour ! Je suis l'${formatAgentName(agent_id)}. Comment puis-je vous aider ?`,
+      welcome_message: welcomeMessage.trim() || `Agent ${agent_id} activé`,
       timestamp: new Date().toISOString()
     });
 
