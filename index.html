@@ -629,6 +629,23 @@
         // Initialiser le chat
         document.addEventListener('DOMContentLoaded', () => {
             addDebugLog('🚀 Page chargée, initialisation...');
+            
+            // Test de récupération du paramètre URL
+            const currentURL = window.location.href;
+            const searchParams = window.location.search;
+            addDebugLog(`🌐 URL complète: ${currentURL}`);
+            addDebugLog(`🔍 Search params: ${searchParams}`);
+            
+            // Test manuel de récupération du paramètre
+            const urlParams = new URLSearchParams(window.location.search);
+            const agentParam = urlParams.get('agent');
+            addDebugLog(`🎯 Paramètre agent récupéré: "${agentParam}"`);
+            
+            // Si pas d'agent dans l'URL, forcer 1-3
+            if (!agentParam) {
+                addDebugLog('⚠️ Aucun paramètre agent trouvé, utilisation de 1-3 par défaut');
+            }
+            
             new VoiceflowChat();
         });
     </script>
