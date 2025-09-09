@@ -374,9 +374,14 @@
                         body.action.payload = payload;
                     }
                     
-                    addDebugLog(`📤 Envoi requête API: type="${type}", payload="${payload || 'none'}"`);
+                    // Ajouter l'agent ID dans le body de la requête
+                    body.config = {
+                        agentID: this.agentID
+                    };
                     
-                    // Essayons avec le version ID dans l'URL
+                    addDebugLog(`📤 Envoi requête API: type="${type}", payload="${payload || 'none'}", agentID="${this.agentID}"`);
+                    
+                    // URL avec version ID
                     const url = `https://general-runtime.voiceflow.com/state/user/${this.userId}/interact?version=${this.versionID}`;
                     addDebugLog(`🌐 URL avec version: ${url}`);
                     
