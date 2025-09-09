@@ -305,6 +305,12 @@
                 this.initializeChat();
                 this.setupEventListeners();
                 this.setWelcomeTime();
+                
+                // Afficher l'agent ID dans l'interface
+                const agentDisplay = document.getElementById('agentDisplay');
+                if (agentDisplay) {
+                    agentDisplay.textContent = `Agent actuel: ${this.agentID}`;
+                }
             }
             
             setWelcomeTime() {
