@@ -376,15 +376,17 @@
                     
                     addDebugLog(`📤 Envoi requête API: type="${type}", payload="${payload || 'none'}"`);
                     
-                    const url = `https://general-runtime.voiceflow.com/state/user/${this.userId}/interact`;
-                    addDebugLog(`🌐 URL: ${url}`);
+                    // Essayons avec le version ID dans l'URL
+                    const url = `https://general-runtime.voiceflow.com/state/user/${this.userId}/interact?version=${this.versionID}`;
+                    addDebugLog(`🌐 URL avec version: ${url}`);
                     
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: {
                             'accept': 'application/json',
                             'content-type': 'application/json',
-                            'Authorization': this.apiKey
+                            'Authorization': this.apiKey,
+                            'versionID': this.versionID
                         },
                         body: JSON.stringify(body)
                     });
@@ -394,6 +396,12 @@
                     if (!response.ok) {
                         const errorText = await response.text();
                         addDebugLog(`❌ Erreur API: ${response.status} - ${errorText}`, 'error');
+                        
+                        // Essayons avec une autre structure d'URL
+                        if (response.status === 404) {
+                            addDebugLog('🔄 Tentative avec URL alternative...', 'info');
+                            return await this.callVoiceflowAPIAlternative(type, payload);
+                        }
                         
                         // Essai avec Bearer token
                         if (response.status === 401 || response.status === 403) {
@@ -410,6 +418,50 @@
                     
                 } catch (error) {
                     addDebugLog(`💥 Exception: ${error.message}`, 'error');
+                    return null;
+                }
+            }
+            
+            async callVoiceflowAPIAlternative(type, payload = null) {
+                try {
+                    const body = {
+                        action: {
+                            type: type
+                        }
+                    };
+                    
+                    if (payload) {
+                        body.action.payload = payload;
+                    }
+                    
+                    // Essayons avec le project ID
+                    const url = `https://general-runtime.voiceflow.com/state/user/${this.userId}/interact/${this.projectID}`;
+                    addDebugLog(`🔄 URL alternative avec project: ${url}`);
+                    
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'accept': 'application/json',
+                            'content-type': 'application/json',
+                            'Authorization': this.apiKey
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    
+                    addDebugLog(`📥 Alternative response: ${response.status} ${response.statusText}`);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        addDebugLog(`❌ Alternative erreur: ${response.status} - ${errorText}`, 'error');
+                        return null;
+                    }
+                    
+                    const data = await response.json();
+                    addDebugLog(`✅ Alternative réussi: ${data.trace ? data.trace.length + ' traces' : 'pas de traces'}`, 'success');
+                    return data;
+                    
+                } catch (error) {
+                    addDebugLog(`💥 Alternative exception: ${error.message}`, 'error');
                     return null;
                 }
             }
