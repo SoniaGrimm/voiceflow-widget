@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat TAO - Agent Voiceflow</title>
+    <title>Chat Assistant</title>
     <style>
         * {
             margin: 0;
@@ -11,374 +11,563 @@
             box-sizing: border-box;
         }
 
-        html, body {
-            height: 100%;
-            overflow: hidden;
-        }
-
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #ffb87d 0%, #a05487 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .chat-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 100%;
+            margin: 0 auto;
             background: white;
-            display: table;
-            width: 100%;
-            height: 100%;
+            border-radius: 0;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
 
         .chat-header {
-            background: #a05487;
-            height: 80px;
-            display: table-row;
-            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        .chat-content {
-            display: table-row;
-            height: 100%;
-            width: 100%;
+        .chat-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            font-size: 12px;
+            margin-top: 5px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .status-connected {
+            background: rgba(34, 197, 94, 0.2);
+            color: #16a34a;
+        }
+
+        .status-disconnected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #dc2626;
+        }
+
+        .debug-section {
+            background: #f1f3f4;
+            border-bottom: 2px solid #e0e0e0;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+            color: #333;
+        }
+
+        .debug-log {
+            margin: 2px 0;
+            padding: 2px;
+            border-left: 3px solid #667eea;
+            padding-left: 8px;
+        }
+
+        .debug-error {
+            border-left-color: #dc2626;
+            color: #dc2626;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .debug-success {
+            border-left-color: #16a34a;
+            color: #16a34a;
+            background: rgba(34, 197, 94, 0.1);
         }
 
         .chat-messages {
-            background: #f8f9fa;
+            flex: 1;
             padding: 20px;
-            height: 100%;
             overflow-y: auto;
-            display: table-cell;
-            vertical-align: top;
-        }
-
-        .chat-input-area {
-            background: white;
-            padding: 15px 20px;
-            border-top: 1px solid #e1e8ed;
-            display: table-row;
-            height: 70px;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         .message {
-            margin-bottom: 15px;
-            clear: both;
-        }
-
-        .message.bot {
-            text-align: left;
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in;
         }
 
         .message.user {
-            text-align: right;
+            align-self: flex-end;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
         }
 
-        .message-content {
-            display: inline-block;
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .message.bot .message-content {
+        .message.bot {
+            align-self: flex-start;
             background: white;
-            border: 1px solid #e1e8ed;
-            text-align: left;
+            color: #333;
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
-        .message.user .message-content {
-            background: #a05487;
-            color: white;
-            text-align: left;
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
         }
 
-        .message-avatar {
-            display: inline-block;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #2c3e50;
-            color: white;
-            font-size: 12px;
-            text-align: center;
-            line-height: 32px;
-            margin-right: 10px;
-            vertical-align: top;
-        }
-
-        .message.user .message-avatar {
-            background: #a05487;
-            margin-left: 10px;
-            margin-right: 0;
-        }
-
-        .chat-input-form {
-            display: table;
-            width: 100%;
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
         .chat-input {
-            display: table-cell;
-            width: 100%;
+            flex: 1;
             padding: 12px 16px;
-            border: 1px solid #e1e8ed;
+            border: 2px solid #e9ecef;
             border-radius: 25px;
-            outline: none;
             font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
         }
 
         .send-button {
-            display: table-cell;
-            width: 45px;
-            height: 45px;
-            border: none;
-            background: #a05487;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-radius: 50%;
+            border: none;
+            border-radius: 25px;
             cursor: pointer;
-            margin-left: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+            min-width: 60px;
         }
 
         .send-button:hover {
-            background: #8a4574;
+            transform: translateY(-1px);
         }
 
         .send-button:disabled {
-            background: #ccc;
+            opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
         }
 
-        .loading-message {
-            text-align: center;
-            padding: 20px;
-            color: #666;
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            max-width: 80px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #666;
+            border-radius: 50%;
+            opacity: 0.4;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.4; }
+            30% { opacity: 1; }
         }
     </style>
 </head>
 <body>
     <div class="chat-container">
-        <div class="chat-header"></div>
+        <div class="chat-header">
+            <h1>💬 Assistant TAO</h1>
+            <div class="status-indicator" id="statusIndicator">🟡 Connexion en cours...</div>
+        </div>
         
-        <div class="chat-content">
-            <div class="chat-messages" id="chat-messages">
-                <div class="loading-message" id="loading-message">
-                    Initialisation de votre agent...
-                </div>
+        <div class="debug-section" id="debugSection">
+            <div class="debug-log">🔄 Initialisation du chat...</div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div>Bonjour ! Je suis votre assistant TAO. Comment puis-je vous aider aujourd'hui ?</div>
+                <div class="message-time" id="welcomeTime"></div>
             </div>
         </div>
-
-        <div class="chat-input-area">
-            <form class="chat-input-form" id="chat-form">
-                <input 
-                    type="text" 
-                    class="chat-input" 
-                    id="message-input" 
-                    placeholder="Tapez votre message..."
-                    disabled
-                >
-                <button type="submit" class="send-button" id="send-button" disabled>
-                    →
-                </button>
-            </form>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <input 
+                type="text" 
+                class="chat-input" 
+                id="chatInput" 
+                placeholder="Tapez votre message..."
+                autocomplete="off"
+            >
+            <button class="send-button" id="sendButton">Envoyer</button>
         </div>
     </div>
 
     <script>
-        // Configuration avec votre fonction Netlify
-        const VOICEFLOW_CONFIG = {
-            proxyUrl: 'https://magical-paletas-861505.netlify.app/.netlify/functions/voiceflow'
-        };
-
-        // Variables globales
-        let userID;
-        let currentAgent;
-        let agentIDSent = false; // Variable pour tracker si l'agent ID a été envoyé
-
-        // Éléments DOM
-        const messagesContainer = document.getElementById('chat-messages');
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
-        const chatForm = document.getElementById('chat-form');
-        const loadingMessage = document.getElementById('loading-message');
-
-        // Appel API via votre fonction Netlify
-        async function callVoiceflowAPI(action) {
-            const response = await fetch(VOICEFLOW_CONFIG.proxyUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    userID: userID,
-                    action: action
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            return await response.json();
-        }
-
-        // Initialisation
-        function init() {
-            const urlParams = new URLSearchParams(window.location.search);
-            currentAgent = urlParams.get('agent') || '1-3';
-            userID = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        function addDebugLog(message, type = 'info') {
+            const debugSection = document.getElementById('debugSection');
+            const time = new Date().toLocaleTimeString();
             
-            console.log('Initialisation chat TAO pour agent:', currentAgent);
-            console.log('User ID:', userID);
-            startSession();
+            const logEl = document.createElement('div');
+            logEl.className = `debug-log${type === 'error' ? ' debug-error' : type === 'success' ? ' debug-success' : ''}`;
+            logEl.innerHTML = `[${time}] ${message}`;
+            
+            debugSection.appendChild(logEl);
+            debugSection.scrollTop = debugSection.scrollHeight;
+            
+            // Garder seulement les 20 dernières lignes
+            const logs = debugSection.children;
+            if (logs.length > 20) {
+                debugSection.removeChild(logs[0]);
+            }
+            
+            console.log(`[VF Debug] ${message}`);
         }
 
-        // Version simplifiée qui ne force pas l'envoi automatique de l'agent ID
-        async function startSession() {
-            try {
-                console.log('Démarrage pour agent:', currentAgent);
+        class VoiceflowChat {
+            constructor() {
+                // Configuration API Voiceflow
+                this.apiKey = 'VF.DM.68b95b26d255357adc1f9c55.OG2nx9m7CmY7d6BP';
+                this.projectID = '68a6e2cc67f49328386b3766';
+                this.versionID = '68a6e2cc67f49328386b3767';
+                this.userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                this.vfConnected = false;
                 
-                const data = await callVoiceflowAPI({
-                    type: 'launch'
-                });
-
-                console.log('Réponse launch:', data);
+                // Elements DOM
+                this.chatMessages = document.getElementById('chatMessages');
+                this.chatInput = document.getElementById('chatInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.typingIndicator = document.getElementById('typingIndicator');
+                this.statusIndicator = document.getElementById('statusIndicator');
                 
-                loadingMessage.style.display = 'none';
-                messageInput.disabled = false;
-                sendButton.disabled = false;
-                messageInput.focus();
+                addDebugLog(`Configuration: Project ID = ${this.projectID}`);
+                addDebugLog(`User ID généré: ${this.userId}`);
                 
-                if (data && data.length > 0) {
-                    processVoiceflowResponse(data);
+                this.initializeChat();
+                this.setupEventListeners();
+                this.setWelcomeTime();
+            }
+            
+            setWelcomeTime() {
+                const welcomeTimeEl = document.getElementById('welcomeTime');
+                if (welcomeTimeEl) {
+                    welcomeTimeEl.textContent = new Date().toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
                 }
-                
-            } catch (error) {
-                console.error('Erreur:', error);
-                loadingMessage.textContent = `Erreur: ${error.message}`;
-                loadingMessage.style.color = 'red';
             }
-        }
-
-        // Version modifiée qui envoie l'agent ID au premier message utilisateur
-        async function sendMessage(message) {
-            if (!message.trim()) return;
             
-            // Si l'agent ID n'a pas encore été envoyé, on l'envoie d'abord
-            if (!agentIDSent) {
-                agentIDSent = true;
+            updateStatus(connected) {
+                this.vfConnected = connected;
+                if (connected) {
+                    this.statusIndicator.textContent = '🟢 Connecté à Voiceflow';
+                    this.statusIndicator.className = 'status-indicator status-connected';
+                    addDebugLog('✅ Connexion à Voiceflow réussie!', 'success');
+                } else {
+                    this.statusIndicator.textContent = '🔴 Mode hors-ligne';
+                    this.statusIndicator.className = 'status-indicator status-disconnected';
+                    addDebugLog('❌ Connexion à Voiceflow échouée - mode hors-ligne', 'error');
+                }
+            }
+            
+            setupEventListeners() {
+                this.sendButton.addEventListener('click', () => this.sendMessage());
+                this.chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
                 
-                messageInput.disabled = true;
-                sendButton.disabled = true;
+                addDebugLog('Event listeners configurés');
+            }
+            
+            async initializeChat() {
+                addDebugLog('🔄 Tentative de connexion à Voiceflow...');
                 
                 try {
-                    console.log('Envoi agent ID via interaction utilisateur:', currentAgent);
+                    const response = await this.callVoiceflowAPI('launch');
+                    if (response) {
+                        this.updateStatus(true);
+                        this.handleResponse(response);
+                    } else {
+                        throw new Error('Aucune réponse de l\'API');
+                    }
+                } catch (error) {
+                    addDebugLog(`❌ Erreur lors de l'initialisation: ${error.message}`, 'error');
+                    this.updateStatus(false);
+                }
+                
+                this.toggleInput(true);
+                addDebugLog('Interface prête à utiliser');
+            }
+            
+            async callVoiceflowAPI(type, payload = null) {
+                try {
+                    const body = {
+                        action: {
+                            type: type
+                        }
+                    };
                     
-                    // Envoyer d'abord l'agent ID
-                    const agentData = await callVoiceflowAPI({
-                        type: 'text',
-                        payload: currentAgent
+                    if (payload) {
+                        body.action.payload = payload;
+                    }
+                    
+                    addDebugLog(`📤 Envoi requête API: type="${type}", payload="${payload || 'none'}"`);
+                    
+                    const url = `https://general-runtime.voiceflow.com/state/user/${this.userId}/interact`;
+                    addDebugLog(`🌐 URL: ${url}`);
+                    
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'accept': 'application/json',
+                            'content-type': 'application/json',
+                            'Authorization': this.apiKey
+                        },
+                        body: JSON.stringify(body)
                     });
-                    console.log('Agent ID envoyé, réponse:', agentData);
-                    processVoiceflowResponse(agentData);
                     
-                    // Puis envoyer le message de l'utilisateur
-                    const userMessage = await callVoiceflowAPI({
-                        type: 'text',
-                        payload: message
-                    });
+                    addDebugLog(`📥 Response Status: ${response.status} ${response.statusText}`);
                     
-                    addMessage('user', message);
-                    processVoiceflowResponse(userMessage);
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        addDebugLog(`❌ Erreur API: ${response.status} - ${errorText}`, 'error');
+                        
+                        // Essai avec Bearer token
+                        if (response.status === 401 || response.status === 403) {
+                            addDebugLog('🔄 Tentative avec Bearer token...', 'info');
+                            return await this.callVoiceflowAPIWithBearer(type, payload);
+                        }
+                        
+                        return null;
+                    }
+                    
+                    const data = await response.json();
+                    addDebugLog(`✅ Données reçues: ${data.trace ? data.trace.length + ' traces' : 'pas de traces'}`, 'success');
+                    return data;
                     
                 } catch (error) {
-                    console.error('Erreur:', error);
-                    addMessage('bot', 'Erreur de connexion.');
+                    addDebugLog(`💥 Exception: ${error.message}`, 'error');
+                    return null;
                 }
-                
-                messageInput.disabled = false;
-                sendButton.disabled = false;
-                messageInput.focus();
-                return;
             }
             
-            // Fonctionnement normal pour les messages suivants
-            addMessage('user', message);
-            messageInput.disabled = true;
-            sendButton.disabled = true;
-
-            try {
-                const data = await callVoiceflowAPI({
-                    type: 'text',
-                    payload: message
+            async callVoiceflowAPIWithBearer(type, payload = null) {
+                try {
+                    const body = {
+                        action: {
+                            type: type
+                        }
+                    };
+                    
+                    if (payload) {
+                        body.action.payload = payload;
+                    }
+                    
+                    const url = `https://general-runtime.voiceflow.com/state/user/${this.userId}/interact`;
+                    addDebugLog(`🔄 Tentative Bearer: ${url}`);
+                    
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'accept': 'application/json',
+                            'content-type': 'application/json',
+                            'Authorization': `Bearer ${this.apiKey}`
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    
+                    addDebugLog(`📥 Bearer Response: ${response.status} ${response.statusText}`);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        addDebugLog(`❌ Bearer erreur: ${response.status} - ${errorText}`, 'error');
+                        return null;
+                    }
+                    
+                    const data = await response.json();
+                    addDebugLog(`✅ Bearer réussi: ${data.trace ? data.trace.length + ' traces' : 'pas de traces'}`, 'success');
+                    return data;
+                    
+                } catch (error) {
+                    addDebugLog(`💥 Bearer exception: ${error.message}`, 'error');
+                    return null;
+                }
+            }
+            
+            async sendMessage() {
+                const message = this.chatInput.value.trim();
+                if (!message || this.sendButton.disabled) return;
+                
+                addDebugLog(`📝 Message utilisateur: "${message}"`);
+                
+                this.addMessage(message, 'user');
+                this.chatInput.value = '';
+                this.showTyping(true);
+                this.toggleInput(false);
+                
+                // Essayer d'abord Voiceflow
+                if (this.vfConnected) {
+                    const response = await this.callVoiceflowAPI('text', message);
+                    if (response) {
+                        setTimeout(() => {
+                            this.showTyping(false);
+                            this.handleResponse(response);
+                            this.toggleInput(true);
+                        }, 800);
+                        return;
+                    } else {
+                        this.updateStatus(false);
+                    }
+                }
+                
+                // Mode hors-ligne
+                addDebugLog('🤖 Mode hors-ligne: utilisation réponse générique');
+                setTimeout(() => {
+                    this.showTyping(false);
+                    this.addMessage('Je suis désolé, j\'ai des difficultés de connexion en ce moment. Pouvez-vous reformuler votre question ?', 'bot');
+                    this.toggleInput(true);
+                }, 1200);
+            }
+            
+            handleResponse(data) {
+                if (!data || !data.trace) {
+                    addDebugLog('❌ Données de réponse invalides', 'error');
+                    this.addMessage("Désolé, je n'ai pas reçu de réponse claire.", 'bot');
+                    return;
+                }
+                
+                let messageFound = false;
+                data.trace.forEach((trace, index) => {
+                    addDebugLog(`📄 Trace ${index}: type="${trace.type}"`);
+                    
+                    if (trace.type === 'text' && trace.payload && trace.payload.message) {
+                        this.addMessage(trace.payload.message, 'bot');
+                        addDebugLog(`💬 Message bot: "${trace.payload.message}"`, 'success');
+                        messageFound = true;
+                    } else if (trace.type === 'speak' && trace.payload && trace.payload.message) {
+                        this.addMessage(trace.payload.message, 'bot');
+                        addDebugLog(`🗣️ Message speak: "${trace.payload.message}"`, 'success');
+                        messageFound = true;
+                    }
                 });
                 
-                if (data && data.length > 0) {
-                    processVoiceflowResponse(data);
+                if (!messageFound) {
+                    addDebugLog('⚠️ Aucun message trouvé dans les traces');
+                    this.addMessage("Je vous écoute, continuez...", 'bot');
                 }
-
-            } catch (error) {
-                console.error('Erreur message:', error);
-                addMessage('bot', 'Erreur de connexion.');
             }
-
-            messageInput.disabled = false;
-            sendButton.disabled = false;
-            messageInput.focus();
-        }
-
-        function processVoiceflowResponse(responseArray) {
-            if (!responseArray || !Array.isArray(responseArray)) return;
             
-            responseArray.forEach(item => {
-                if (item.type === 'text' && item.payload?.message) {
-                    addMessage('bot', item.payload.message);
-                } else if (item.type === 'speak' && item.payload?.message) {
-                    addMessage('bot', item.payload.message);
+            addMessage(text, sender) {
+                const messageEl = document.createElement('div');
+                messageEl.className = `message ${sender}`;
+                
+                const textEl = document.createElement('div');
+                textEl.textContent = text;
+                
+                const timeEl = document.createElement('div');
+                timeEl.className = 'message-time';
+                timeEl.textContent = new Date().toLocaleTimeString('fr-FR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                messageEl.appendChild(textEl);
+                messageEl.appendChild(timeEl);
+                
+                this.chatMessages.appendChild(messageEl);
+                this.scrollToBottom();
+            }
+            
+            showTyping(show) {
+                this.typingIndicator.style.display = show ? 'flex' : 'none';
+                if (show) {
+                    this.scrollToBottom();
                 }
-            });
-        }
-
-        function addMessage(sender, content) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-            
-            const avatar = document.createElement('span');
-            avatar.className = 'message-avatar';
-            avatar.textContent = sender === 'bot' ? 'TAO' : 'U';
-            
-            const messageContent = document.createElement('div');
-            messageContent.className = 'message-content';
-            messageContent.textContent = content;
-            
-            if (sender === 'bot') {
-                messageDiv.appendChild(avatar);
-                messageDiv.appendChild(messageContent);
-            } else {
-                messageDiv.appendChild(messageContent);
-                messageDiv.appendChild(avatar);
             }
             
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        // Gestionnaires d'événements
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const message = messageInput.value.trim();
-            if (message) {
-                sendMessage(message);
-                messageInput.value = '';
+            toggleInput(enabled) {
+                this.chatInput.disabled = !enabled;
+                this.sendButton.disabled = !enabled;
+                if (enabled) {
+                    this.chatInput.focus();
+                }
             }
+            
+            scrollToBottom() {
+                setTimeout(() => {
+                    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                }, 100);
+            }
+        }
+        
+        // Initialiser le chat
+        document.addEventListener('DOMContentLoaded', () => {
+            addDebugLog('🚀 Page chargée, initialisation...');
+            new VoiceflowChat();
         });
-
-        // Démarrer l'application
-        init();
     </script>
 </body>
 </html>
